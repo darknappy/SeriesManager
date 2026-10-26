@@ -26,9 +26,10 @@ Estado verificado el 26 de octubre de 2026:
 - Solo quedan **5 incidencias reales de huecos aislados**: Lanterns S01E8, Rooster
   Fighter S01E1-E3, Trapped in a Dating Sim S02E11, Uma Musume S01E13 y You and I
   Are Polar Opposites S02E1/E2/E13.
-- Quedan **4 fichas sin proveedor externo**: los tres OVA de Macross con TMDB manual
-  y `Ranma`, que se detecta correctamente por archivos (3 temporadas y 25 vídeos)
-  pero aún no tiene un ID de TVmaze/AniList asignado.
+- Quedan **4 fichas sin TVmaze**: los tres OVA de Macross con TMDB manual y
+  `Ranma`, identificada manualmente con TMDB `259140`. Ranma se detecta por archivos
+  (3 temporadas y 25 vídeos) y **no genera huecos falsos**.
+- **0 carpetas pendientes de identificar** y **0 series por revisar**.
 - El **plan 5** ya se aplicó y su diario permite deshacerlo. Los planes 1-4 y 6 están
   marcados como `stale`. **No hay ningún plan listo pendiente** y no se generará ni
   aplicará otro sin revisión y aprobación explícita.
@@ -334,9 +335,8 @@ Estas reglas están codificadas en `data/series_seed.json` y `data/groups_seed.j
 - **Specials de Chobits:** 8.5, 18.5, 24.5 y OVA se renumeran en `Season 00`.
 - **Uma Musume:** OVA principal y especiales BNW se ordenan y renumeran en `Season 00`.
 - **Ranma:** la carpeta `Ranma` contiene `Ranma_1_2_2024_01..12` y las temporadas 2 y
-  3. Se detectan 25 vídeos en 3 temporadas sin huecos falsos. No tiene ID de proveedor
-  externo, así que aparece como carpeta pendiente de identificar si quieres asociarle
-  TVmaze/AniList/TMDB.
+  3. Se detectan 25 vídeos en 3 temporadas sin huecos falsos. Tiene TMDB `259140`
+  manual y no tiene TVmaze/AniList; la estructura de temporadas sale de los archivos.
 
 ---
 
