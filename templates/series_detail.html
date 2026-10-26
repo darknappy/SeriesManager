@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}{{ series.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="small muted"><a href="/series">← Volver a series</a></div>
+    <h1>{{ series.title }} {% if series.year %}<span class="muted">({{ series.year }})</span>{% endif %}</h1>
+    <div class="row">
+      <span class="badge {{ {'matched':'good','manual':'accent','seeded':'info','unmatched':'bad'}.get(series.match_status, '') }}">{{ series.match_status|status_es }}</span>
+      {% if series.is_airing %}<span class="badge good">En emisión</span>{% endif %}
+      <span class="badge {{ 'accent' if series.root == 'airing' else '' }}">{{ series.root|status_es }}</span>
+      {% if series.status %}<span class="badge">{{ series.status|status_es }}</span>{% endif %}
+      {% if series.media_type %}<span class="badge">{{ series.media_type }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/series/{{ series.id }}/search">
+      <button class="btn primary" type="submit">Buscar candidatos</button>
+    </form>
+    <form method="post" action="/jobs/start/sync"><button class="btn" type="submit">Sincronizar todo</button></form>
+  </div>
+</div>
+
+<section class="panel mb">
+  <div class="hero">
+    {% if series.cover_url %}
+      <img class="cover" src="{{ series.cover_url }}" alt="Carátula de {{ series.title }}" loading="lazy">
+    {% else %}
+      <div class="cover">▣</div>
+    {% endif %}
+    <div class="info">
+      {% if series.overview %}<p class="small">{{ series.overview }}</p>{% else %}<p class="small muted">Sin sinopsis todavía. Sincroniza con TVmaze.</p>{% endif %}
+      <div class="kv">
+        <div><div class="k">TMDB</div><div class="v mono">{{ series.tmdb_id or '—' }}</div></div>
+        <div><div class="k">TVmaze</div><div class="v mono">{{ series.tvmaze_id or '—' }}</div></div>
+        <div><div class="k">AniList</div><div class="v mono">{{ series.anilist_id or '—' }}</div></div>
+        <div><div class="k">Temporadas</div><div class="v">{{ seasons|length }}</div></div>
+        <div><div class="k">Episodios</div><div class="v">{{ episode_total }}</div></div>
+        <div><div class="k">Última emisión</div><div class="v">{{ series.last_aired|date_es }}</div></div>
+        <div><div class="k">Próximo episodio</div><div class="v">{% if series.next_episode %}E{{ series.next_episode }} · {{ series.next_air_at|datetime_es }}{% else %}—{% endif %}</div></div>
+        <div><div class="k">Identificador local</div><div class="v mono small">{{ series.series_key }}</div></div>
+      </div>
+      {% if series.notes %}<div class="note small mt">{{ series.notes }}</div>{% endif %}
+      <div class="row mt">
+        <form class="inline-form" method="post" action="/series/{{ series.id }}/root">
+          <label class="field" style="min-width:180px">
+            <span>Biblioteca de destino</span>
+            <select name="root">
+              <option value="library" {{ 'selected' if series.root == 'library' }}>Principal ({{ cfg.library_root }})</option>
+              <option value="airing" {{ 'selected' if series.root == 'airing' }}>Anime en emisión ({{ cfg.airing_root }})</option>
+            </select>
+          </label>
+          <button class="btn" type="submit">Guardar destino</button>
+        </form>
+        <form class="inline-form" method="post" action="/series/{{ series.id }}/airing">
+          <input type="hidden" name="airing" value="{{ '0' if series.is_airing else '1' }}">
+          <button class="btn" type="submit">{{ 'Quitar de emisión' if series.is_airing else 'Marcar en emisión' }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="grid two">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Temporadas y episodios</h2>
+        <span class="muted small">{{ missing_count }} episodios faltantes</span>
+      </div>
+      {% if seasons %}
+        {% for season in seasons %}
+          <details class="season" {{ 'open' if loop.first }}>
+            <summary>
+              <span>Season {{ '%02d'|format(season.number) }}</span>
+              <span class="badge {{ 'good' if season.present_count == season.total_episodes else 'warn' }}">{{ season.present_count }}/{{ season.total_episodes }}</span>
+              {% if season.missing_count %}<span class="badge bad">{{ season.missing_count }} faltan</span>{% endif %}
+              {% if season.is_airing %}<span class="badge accent">En emisión</span>{% endif %}
+            </summary>
+            <div class="season-body">
+              {% if season.episodes %}
+                <div class="table-wrap">
+                  <table class="dense">
+                    <thead><tr><th>Ep.</th><th>Título</th><th>Emisión</th><th>Estado</th><th class="num">Archivos</th></tr></thead>
+                    <tbody>
+                    {% for episode in season.episodes %}
+                      <tr>
+                        <td class="mono">E{{ '%02d'|format(episode.episode_number|int) }}</td>
+                        <td>{{ episode.title or '—' }}</td>
+                        <td class="muted small">{{ episode.air_date|date_es }}</td>
+                        <td>
+                          {% if episode.status == 'present' %}<span class="badge good">Presente</span>
+                          {% elif episode.status == 'unaired' %}<span class="badge info">Sin emitir</span>
+                          {% else %}<span class="badge bad">Falta</span>{% endif %}
+                        </td>
+                        <td class="num">{{ episode.file_count }}</td>
+                      </tr>
+                    {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% else %}
+                <div class="empty small">Esta temporada no tiene episodios sincronizados.</div>
+              {% endif %}
+            </div>
+          </details>
+        {% endfor %}
+      {% else %}
+        <div class="empty">No hay temporadas. Revisa el emparejamiento y sincroniza.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Archivos detectados</h2>
+        <span class="muted small">{{ files|length }} mostrados</span>
+      </div>
+      {% if files %}
+        <div class="table-wrap">
+          <table class="dense">
+            <thead><tr><th>Archivo</th><th>Tipo</th><th class="num">Tamaño</th><th>Estado</th><th>Motivo</th></tr></thead>
+            <tbody>
+            {% for file in files %}
+              <tr>
+                <td class="path">
+                  <span class="mono">{{ file.rel_path or file.path }}</span>
+                  <button class="btn tiny" type="button" data-copy="{{ file.path }}">Copiar</button>
+                </td>
+                <td><span class="badge">{{ file.kind }}{% if file.role %} · {{ file.role }}{% endif %}</span></td>
+                <td class="num">{{ file.size|human_size }}</td>
+                <td><span class="badge {{ {'present':'good','unparsed':'warn','missing':'bad','quarantined':'orange'}.get(file.status,'') }}">{{ file.status|status_es }}</span></td>
+                <td class="muted small">{{ file.reason or '—' }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">No hay archivos asociados a esta serie.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Incidencias de la serie</h2>
+        <a class="btn small" href="/issues?serie={{ series.id }}">Ver todas</a>
+      </div>
+      {% if issues %}
+        <div class="stack">
+          {% for issue in issues %}
+            <div class="row top" style="gap:.6rem">
+              <span class="dot {{ {'critical':'bad','error':'bad','warning':'warn','info':''}.get(issue.severity, '') }}" style="margin-top:.45rem"></span>
+              <div style="flex:1;min-width:0">
+                <div class="small"><span class="badge {{ {'critical':'bad','error':'bad','warning':'warn'}.get(issue.severity, 'info') }}">{{ issue.severity|status_es }}</span> <span class="muted">{{ issue.code }}</span></div>
+                <div class="small break">{{ issue.message }}</div>
+              </div>
+              <form method="post" action="/issues/{{ issue.id }}/resolve"><button class="btn tiny" type="submit">Resolver</button></form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">Sin incidencias pendientes.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Emparejamiento</h2>
+        <span class="badge {{ {'matched':'good','manual':'accent','seeded':'info','unmatched':'bad'}.get(series.match_status, '') }}">{{ series.match_status|status_es }}</span>
+      </div>
+      {% if candidates %}
+        <div class="small muted mb">Candidatos guardados. Elige el correcto si el automático no coincide.</div>
+        <div class="stack">
+          {% for candidate in candidates %}
+            <div class="row top" style="border:1px solid var(--line-soft);border-radius:8px;padding:.5rem;gap:.6rem">
+              <div style="flex:1;min-width:0">
+                <div class="small">
+                  <span class="badge {{ 'accent' if candidate.provider == 'tvmaze' else 'info' }}">{{ candidate.provider }}</span>
+                  <span class="badge">{{ '%.0f'|format((candidate.score or 0) * 100) }}%</span>
+                  {% if candidate.selected %}<span class="badge good">Elegido</span>{% endif %}
+                </div>
+                <div class="small break"><strong>{{ candidate.title }}</strong>{% if candidate.year %} ({{ candidate.year }}){% endif %}</div>
+                <div class="tiny faint mono">id {{ candidate.provider_id }}</div>
+              </div>
+              <form method="post" action="/series/{{ series.id }}/select">
+                <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
+                <button class="btn small" type="submit">Elegir</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">No hay candidatos guardados. Usa «Buscar candidatos».</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Editar ficha</h2></div>
+      <form method="post" action="/series/{{ series.id }}/edit">
+        <div class="form-grid">
+          <label class="field full"><span>Título</span><input type="text" name="title" value="{{ series.title }}" required></label>
+          <label class="field"><span>Año</span><input type="number" name="year" value="{{ series.year or '' }}" min="1900" max="2100"></label>
+          <label class="field"><span>TMDB ID</span><input type="text" name="tmdb_id" value="{{ series.tmdb_id or '' }}" placeholder="p. ej. 35610"></label>
+          <label class="field"><span>TVmaze ID</span><input type="text" name="tvmaze_id" value="{{ series.tvmaze_id or '' }}" placeholder="p. ej. 4247"></label>
+          <label class="field"><span>AniList ID</span><input type="text" name="anilist_id" value="{{ series.anilist_id or '' }}" placeholder="opcional"></label>
+          <label class="field full"><span>Notas</span><textarea name="notes">{{ series.notes or '' }}</textarea></label>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit">Guardar ficha</button>
+        </div>
+      </form>
+      <p class="tiny muted">Si cambias el TVmaze ID, ejecuta una sincronización para recargar temporadas y episodios. El TMDB ID se usa en el nombre de la carpeta para que Jellyfin la identifique.</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Carpetas de origen</h2></div>
+      {% if groups %}
+        <div class="stack">
+          {% for group in groups %}
+            <div style="border:1px solid var(--line-soft);border-radius:8px;padding:.5rem">
+              <div class="small break"><strong>{{ group.folder_name }}</strong></div>
+              <div class="tiny muted">
+                Season {{ '%02d'|format(group.season if group.season is not none else 1) }}
+                {% if group.absolute %} · numeración absoluta{% endif %}
+                {% if group.ignore_filename_season %} · ignora la temporada del nombre{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">No hay carpetas de origen vinculadas.</div>
+      {% endif %}
+      <form class="mt" method="post" action="/series/{{ series.id }}/folders">
+        <label class="field">
+          <span>Vincular otra carpeta</span>
+          <input type="text" name="folder_name" list="folder-list" placeholder="Nombre exacto de la carpeta" required>
+          <small class="muted">Para carpetas renombradas sin <span class="mono">[tmdbid-…]</span>. No se mueve ningún archivo.</small>
+        </label>
+        <div class="form-actions">
+          <button class="btn" type="submit">Vincular carpeta</button>
+        </div>
+      </form>
+      <datalist id="folder-list">
+        {% for folder in folder_choices %}<option value="{{ folder }}">{% endfor %}
+      </datalist>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Episodios faltantes</h2></div>
+      {% if missing_count %}
+        <p class="small">Faltan <strong>{{ missing_count }}</strong> episodios ya emitidos.</p>
+        <div class="row">
+          {% for label in missing_labels %}<span class="badge warn">{{ label }}</span>{% endfor %}
+          {% if missing_count > missing_labels|length %}<span class="badge">+{{ missing_count - missing_labels|length }}</span>{% endif %}
+        </div>
+        <div class="mt"><a class="btn small" href="/missing?serie={{ series.id }}">Ver lista detallada</a></div>
+      {% else %}
+        <div class="empty small">No hay episodios faltantes registrados.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Trabajo {{ job.id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="small muted"><a href="/jobs">← Volver a trabajos</a></div>
+    <h1>{{ job.label }}</h1>
+    <p class="mono small">{{ job.id }} · {{ job.kind }}</p>
+  </div>
+  <div class="btn-row">
+    <span id="job-status" class="badge {{ {'done':'good','error':'bad','running':'accent','queued':'info'}.get(job.status,'') }}">{{ job.status|status_es }}</span>
+    <a class="btn" href="/">Panel</a>
+  </div>
+</div>
+
+<div id="job-live" data-job-id="{{ job.id }}" data-status="{{ job.status }}">
+  <section class="panel mb">
+    <div class="row between small">
+      <span id="job-message">{{ job.message or '' }}</span>
+      <span id="job-pct" class="muted">{{ job.progress }}%</span>
+    </div>
+    <div class="progress lg mt"><span id="job-bar" style="width: {{ job.progress }}%"></span></div>
+    <div class="row between tiny muted mt">
+      <span>Creado: {{ job.created_at|datetime_es }}</span>
+      <span>Iniciado: {{ job.started_at|datetime_es }}</span>
+      <span>Terminado: {{ job.finished_at|datetime_es if job.finished_at else '—' }}</span>
+    </div>
+  </section>
+</div>
+
+{% if job.error %}
+  <section class="panel mb">
+    <div class="panel-head"><h2>Error</h2></div>
+    <pre class="mono small" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ job.error }}</pre>
+  </section>
+{% endif %}
+
+{% if job.result_data %}
+  <section class="panel mb">
+    <div class="panel-head"><h2>Resultado</h2></div>
+    <pre class="mono small" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:520px;overflow:auto">{{ job.result_data|tojson(indent=2) }}</pre>
+    <div class="btn-row mt">
+      {% if job.kind == 'plan' and job.result_data.get('plan_id') %}
+        <a class="btn primary" href="/plans/{{ job.result_data.plan_id }}">Revisar plan #{{ job.result_data.plan_id }}</a>
+        <a class="btn" href="/plans/{{ job.result_data.plan_id }}/report" target="_blank">Informe HTML</a>
+      {% elif job.kind in ('scan', 'sync', 'match') %}
+        <a class="btn primary" href="/series">Ver series</a>
+      {% elif job.kind in ('apply', 'undo') %}
+        <a class="btn primary" href="/plans">Ver planes</a>
+      {% elif job.kind == 'watch' %}
+        <a class="btn primary" href="/airing">Ver emisión</a>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
+{% endblock %}

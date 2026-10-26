@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Series{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Series</h1>
+    <p>{{ series|length }} fichas en el catálogo local.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn primary" href="/series/new">Crear identificador</a>
+    <form method="post" action="/jobs/start/scan"><button class="btn" type="submit">Escanear</button></form>
+    <form method="post" action="/jobs/start/sync"><button class="btn" type="submit">Sincronizar</button></form>
+    <form method="post" action="/jobs/start/match"><button class="btn" type="submit">Emparejar</button></form>
+  </div>
+</div>
+
+{% if unidentified %}
+<section class="panel mb" style="border-color:var(--warn, #a56a00)">
+  <div class="panel-head">
+    <div>
+      <h2>Carpetas sin identificar</h2>
+      <p class="small muted">El escaneo encontró carpetas que no coinciden con una ficha. Asígnales un identificador o vincula una carpeta con nombre modificado.</p>
+    </div>
+    <span class="badge warn">{{ unidentified|length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table class="dense">
+      <thead><tr><th>Carpeta</th><th>Ficha provisional</th><th class="num">Vídeos</th><th></th></tr></thead>
+      <tbody>
+      {% for item in unidentified %}
+        <tr>
+          <td class="mono small break">{{ item.folder_name }}</td>
+          <td>
+            {% if item.series_id %}<a href="/series/{{ item.series_id }}">{{ item.series_title }}</a>{% else %}<span class="muted">Sin ficha</span>{% endif %}
+          </td>
+          <td class="num">{{ item.video_count or 0 }}</td>
+          <td class="num">
+            <form method="get" action="/series/new">
+              <input type="hidden" name="carpeta" value="{{ item.folder_name }}">
+              <button class="btn tiny primary" type="submit">Identificar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<form class="panel flat mb" method="get" action="/series">
+  <div class="searchbar">
+    <label class="field">
+      <span>Buscar</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Título, alias o título original…">
+    </label>
+    <label class="field" style="flex:0 1 150px">
+      <span>Biblioteca</span>
+      <select name="root">
+        <option value="">Todas</option>
+        <option value="library" {{ 'selected' if root == 'library' }}>Principal</option>
+        <option value="airing" {{ 'selected' if root == 'airing' }}>En emisión</option>
+      </select>
+    </label>
+    <label class="field" style="flex:0 1 170px">
+      <span>Emparejamiento</span>
+      <select name="match">
+        <option value="">Todos</option>
+        <option value="matched" {{ 'selected' if match == 'matched' }}>Emparejada</option>
+        <option value="manual" {{ 'selected' if match == 'manual' }}>Manual</option>
+        <option value="seeded" {{ 'selected' if match == 'seeded' }}>Semilla</option>
+        <option value="unmatched" {{ 'selected' if match == 'unmatched' }}>Sin emparejar</option>
+      </select>
+    </label>
+    <label class="field" style="flex:0 1 140px">
+      <span>Emisión</span>
+      <select name="airing">
+        <option value="">Todas</option>
+        <option value="1" {{ 'selected' if airing == '1' }}>Solo en emisión</option>
+      </select>
+    </label>
+    <button class="btn primary" type="submit">Filtrar</button>
+    <a class="btn" href="/series">Limpiar</a>
+  </div>
+</form>
+
+<div class="panel">
+  {% if series %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Serie</th>
+            <th>Año</th>
+            <th>Biblioteca</th>
+            <th class="num">Episodios</th>
+            <th class="num">Archivos</th>
+            <th>Emparejamiento</th>
+            <th>Emisión</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for item in series %}
+          <tr>
+            <td>
+              <a href="/series/{{ item.id }}"><strong>{{ item.title }}</strong></a>
+              {% if item.original_title and item.original_title != item.title %}
+                <div class="tiny muted">{{ item.original_title }}</div>
+              {% endif %}
+              {% if item.tmdb_id %}<span class="tiny faint mono">tmdb {{ item.tmdb_id }}</span>{% endif %}
+            </td>
+            <td class="muted">{{ item.year or '—' }}</td>
+            <td><span class="badge {{ 'accent' if item.root == 'airing' else '' }}">{{ item.root|status_es }}</span></td>
+            <td class="num">
+              <span class="badge {{ 'good' if item.episode_count and item.present_count == item.episode_count else ('warn' if item.missing_count else '') }}">{{ item.present_count }}/{{ item.episode_count }}</span>
+            </td>
+            <td class="num">{{ item.file_count }}</td>
+            <td>
+              <span class="badge {{ {'matched':'good','manual':'accent','seeded':'info','unmatched':'bad'}.get(item.match_status, '') }}">{{ item.match_status|status_es }}</span>
+            </td>
+            <td>
+              {% if item.is_airing %}
+                <span class="badge good">En emisión</span>
+              {% elif item.last_aired %}
+                <span class="badge">Última: {{ item.last_aired|date_es }}</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">No hay series que coincidan con el filtro.<br><span class="small">Si el catálogo está vacío, ejecuta primero un escaneo.</span></div>
+  {% endif %}
+</div>
+{% endblock %}

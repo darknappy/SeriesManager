@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Plan #{{ plan.id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="small muted"><a href="/plans">← Volver a planes</a></div>
+    <h1>Plan #{{ plan.id }}
+      <span class="badge {{ {'ready':'good','applied':'good','partial':'warn','stale':'warn','building':'accent','applying':'accent','undone':'info'}.get(plan.status,'') }}">{{ plan.status|status_es }}</span>
+    </h1>
+    <p>Creado el {{ plan.created_at|datetime_es }}{% if plan.applied_at %} · aplicado el {{ plan.applied_at|datetime_es }}{% endif %}</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn" href="/plans/{{ plan.id }}/report" target="_blank">Abrir informe HTML</a>
+    <a class="btn" href="/reports/plan_{{ plan.id }}.html" target="_blank">Ver en el navegador</a>
+  </div>
+</div>
+
+<div class="grid stats mb">
+  <div class="stat"><div class="label">Movimientos</div><div class="value">{{ counts.get('move', 0) + counts.get('rename', 0) }}</div><div class="hint">renombrar o mover</div></div>
+  <div class="stat warn"><div class="label">Cuarentena</div><div class="value">{{ counts.get('quarantine', 0) }}</div><div class="hint">duplicados, no se borran</div></div>
+  <div class="stat {{ 'bad' if counts.get('conflict', 0) else '' }}"><div class="label">Conflictos</div><div class="value">{{ counts.get('conflict', 0) }}</div><div class="hint">requieren revisión</div></div>
+  <div class="stat"><div class="label">Series</div><div class="value">{{ plan.summary_data.get('series', 0) }}</div><div class="hint">{{ plan.summary_data.get('files', total) }} archivos en el plan</div></div>
+  <div class="stat"><div class="label">Volumen</div><div class="value">{{ plan.summary_data.get('bytes', 0)|human_size }}</div><div class="hint">afectado por movimientos</div></div>
+  <div class="stat"><div class="label">Diario</div><div class="value">{{ journal_count }}</div><div class="hint">operaciones registradas</div></div>
+</div>
+
+{% if plan.summary_data.get('warnings') %}
+  <section class="panel mb">
+    <div class="panel-head"><h2>Avisos del plan</h2></div>
+    <ul class="clean small">
+      {% for warning in plan.summary_data.get('warnings', [])[:40] %}
+        <li>{{ warning }}</li>
+      {% endfor %}
+    </ul>
+    {% if plan.summary_data.get('warnings')|length > 40 %}
+      <p class="tiny muted">… y {{ plan.summary_data.get('warnings')|length - 40 }} avisos más en el informe.</p>
+    {% endif %}
+  </section>
+{% endif %}
+
+{% if plan.status == 'ready' %}
+  <section class="confirm-box mb">
+    <h3>¿Aplicar este plan?</h3>
+    <p class="small">
+      Se renombrarán y moverán <strong>{{ counts.get('move', 0) + counts.get('rename', 0) }}</strong> archivos.
+      Los <strong>{{ counts.get('quarantine', 0) }}</strong> duplicados irán a <code>{{ cfg.quarantine_root }}</code>, no se borrarán.
+      Cada operación queda registrada y se puede deshacer con el botón de reversión.
+    </p>
+    {% if counts.get('conflict', 0) %}
+      <div class="note bad small">Hay {{ counts.get('conflict', 0) }} conflictos que no se aplicarán. Revisa la pestaña «Conflictos» antes de continuar.</div>
+    {% endif %}
+    <form method="post" action="/plans/{{ plan.id }}/apply" data-confirm="Vas a aplicar el plan #{{ plan.id }}. ¿Continuar?">
+      <div class="row mt">
+        <input type="text" name="confirm" placeholder="Escribe APLICAR" autocomplete="off" style="max-width:220px" required>
+        <button class="btn danger" type="submit">Aplicar plan</button>
+      </div>
+    </form>
+  </section>
+{% elif plan.status == 'stale' %}
+  <div class="note warn mb">
+    Este plan es anterior a la fusión de <strong>InuYasha</strong> en una sola serie de 7 temporadas.
+    Sus rutas ya no representan la biblioteca actual: <strong>no se debe aplicar</strong>. Usa el plan más reciente.
+  </div>
+{% elif plan.status in ('applied', 'partial', 'applying') %}
+  <section class="confirm-box good mb">
+    <h3>Plan aplicado</h3>
+    <p class="small">Puedes revertir las operaciones registradas en el diario. Los archivos volverán a su ruta original y la cuarentena también se restaurará.</p>
+    <form method="post" action="/plans/{{ plan.id }}/undo" data-confirm="Vas a deshacer el plan #{{ plan.id }}. ¿Continuar?">
+      <div class="row mt">
+        <input type="text" name="confirm" placeholder="Escribe DESHACER" autocomplete="off" style="max-width:220px" required>
+        <button class="btn danger" type="submit">Deshacer plan</button>
+      </div>
+    </form>
+  </section>
+{% elif plan.status == 'undone' %}
+  <div class="note mb">Este plan fue deshecho. Las rutas del catálogo deberían coincidir de nuevo con los archivos originales.</div>
+{% else %}
+  <div class="note warn mb">El plan está en estado <strong>{{ plan.status|status_es }}</strong>. Espera a que termine de generarse o revisa el trabajo correspondiente.</div>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Acciones</h2>
+    <span class="muted small">{{ total }} resultados</span>
+  </div>
+  <div class="tabs">
+    <a href="/plans/{{ plan.id }}?q={{ q|urlencode }}" class="{{ 'active' if not action }}">Todas <span class="count">{{ counts.values()|sum }}</span></a>
+    <a href="/plans/{{ plan.id }}?action=move&q={{ q|urlencode }}" class="{{ 'active' if action == 'move' }}">Mover <span class="count">{{ counts.get('move', 0) }}</span></a>
+    <a href="/plans/{{ plan.id }}?action=rename&q={{ q|urlencode }}" class="{{ 'active' if action == 'rename' }}">Renombrar <span class="count">{{ counts.get('rename', 0) }}</span></a>
+    <a href="/plans/{{ plan.id }}?action=quarantine&q={{ q|urlencode }}" class="{{ 'active' if action == 'quarantine' }}">Cuarentena <span class="count">{{ counts.get('quarantine', 0) }}</span></a>
+    <a href="/plans/{{ plan.id }}?action=conflict&q={{ q|urlencode }}" class="{{ 'active' if action == 'conflict' }}">Conflictos <span class="count">{{ counts.get('conflict', 0) }}</span></a>
+  </div>
+  <form class="searchbar mb" method="get" action="/plans/{{ plan.id }}">
+    {% if action %}<input type="hidden" name="action" value="{{ action }}">{% endif %}
+    <label class="field" style="flex:1 1 300px"><span>Buscar en origen, destino o serie</span><input type="search" name="q" value="{{ q }}" placeholder="ruta o título…"></label>
+    <button class="btn" type="submit">Buscar</button>
+    {% if q %}<a class="btn" href="/plans/{{ plan.id }}?action={{ action }}">Limpiar</a>{% endif %}
+  </form>
+
+  {% if actions %}
+    <div class="table-wrap">
+      <table class="dense">
+        <thead>
+          <tr><th>#</th><th>Acción</th><th>Serie</th><th>Origen</th><th>Destino</th><th class="num">Tamaño</th><th>Estado</th><th>Motivo / error</th></tr>
+        </thead>
+        <tbody>
+        {% for item in actions %}
+          <tr>
+            <td class="num muted">{{ item.seq }}</td>
+            <td><span class="badge {{ {'move':'good','rename':'good','quarantine':'warn','conflict':'bad'}.get(item.action,'') }}">{{ item.action|action_es }}</span></td>
+            <td class="small">{% if item.series_id %}<a href="/series/{{ item.series_id }}">{{ item.series_title or ('#' ~ item.series_id) }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td class="path"><span class="mono">{{ item.source or '—' }}</span></td>
+            <td class="path"><span class="mono">{{ item.target or '—' }}</span></td>
+            <td class="num">{{ item.size|human_size }}</td>
+            <td><span class="badge {{ {'done':'good','error':'bad','skipped':'info','pending':''}.get(item.status,'') }}">{{ item.status|status_es }}</span></td>
+            <td class="small">
+              {{ item.reason or '' }}
+              {% if item.error %}<div class="badge bad">{{ item.error }}</div>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if pages > 1 %}
+      <div class="pagination">
+        {% if page > 1 %}<a class="btn small" href="/plans/{{ plan.id }}?action={{ action }}&q={{ q|urlencode }}&page={{ page - 1 }}">← Anterior</a>{% endif %}
+        <span class="muted small">Página {{ page }} de {{ pages }}</span>
+        {% if page < pages %}<a class="btn small" href="/plans/{{ plan.id }}?action={{ action }}&q={{ q|urlencode }}&page={{ page + 1 }}">Siguiente →</a>{% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="empty">No hay acciones con este filtro.</div>
+  {% endif %}
+</section>
+{% endblock %}

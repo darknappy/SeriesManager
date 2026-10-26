@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Cuarentena{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Cuarentena</h1>
+    <p>Aquí llegan los duplicados y archivos que el plan retira de la biblioteca. Nunca se borran.</p>
+  </div>
+  <div class="btn-row">
+    <button class="btn" type="button" data-copy="{{ cfg.quarantine_root }}">Copiar ruta</button>
+    <a class="btn" href="/plans">Ver planes</a>
+  </div>
+</div>
+
+<div class="grid stats mb">
+  <div class="stat warn"><div class="label">Archivos en cuarentena</div><div class="value">{{ total_entries }}</div><div class="hint">máximo mostrado: 1200</div></div>
+  <div class="stat"><div class="label">Espacio ocupado</div><div class="value">{{ total_size|human_size }}</div><div class="hint">no se libera hasta que decidas</div></div>
+  <div class="stat"><div class="label">Carpeta</div><div class="value" style="font-size:.95rem;overflow-wrap:anywhere">{{ cfg.quarantine_root }}</div><div class="hint">fuera de la biblioteca</div></div>
+</div>
+
+<div class="note mb small">
+  Para devolver un archivo a su sitio, usa <strong>Deshacer</strong> en el plan que lo movió. Así se respeta el diario y se actualiza el catálogo. No muevas archivos a mano.
+</div>
+
+<section class="panel mb">
+  <div class="panel-head"><h2>Contenido</h2></div>
+  {% if entries %}
+    <div class="table-wrap">
+      <table class="dense">
+        <thead><tr><th>Archivo</th><th class="num">Tamaño</th><th>Fecha</th></tr></thead>
+        <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td class="path"><span class="mono">{{ entry.relative }}</span> <button class="btn tiny" type="button" data-copy="{{ entry.path }}">Copiar</button></td>
+            <td class="num">{{ entry.size|human_size }}</td>
+            <td class="muted small">{{ entry.mtime|datetime_es }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">La cuarentena está vacía.</div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2>Últimas operaciones de cuarentena</h2></div>
+  {% if journal %}
+    <div class="table-wrap">
+      <table class="dense">
+        <thead><tr><th>Plan</th><th>Origen</th><th>Destino</th><th>Estado</th><th>Fecha</th></tr></thead>
+        <tbody>
+        {% for item in journal %}
+          <tr>
+            <td>{% if item.plan_id %}<a href="/plans/{{ item.plan_id }}">#{{ item.plan_id }}</a>{% else %}—{% endif %}</td>
+            <td class="path"><span class="mono">{{ item.source }}</span></td>
+            <td class="path"><span class="mono">{{ item.target }}</span></td>
+            <td><span class="badge {{ {'done':'good','error':'bad'}.get(item.status,'') }}">{{ item.status|status_es }}</span></td>
+            <td class="muted small">{{ item.applied_at|datetime_es }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty small">Todavía no se ha movido nada a cuarentena.</div>
+  {% endif %}
+</section>
+{% endblock %}

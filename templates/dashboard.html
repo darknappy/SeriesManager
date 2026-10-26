@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Panel{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Biblioteca bajo control</h1>
+    <p>Previsualiza, empareja y ordena tus series sin tocar los archivos hasta que lo apruebes.</p>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/jobs/start/scan"><button class="btn" type="submit">Escanear</button></form>
+    <form method="post" action="/jobs/start/sync"><button class="btn" type="submit">Sincronizar</button></form>
+    <form method="post" action="/jobs/start/match"><button class="btn" type="submit">Emparejar</button></form>
+    <form method="post" action="/jobs/start/plan">
+      <input type="hidden" name="mode" value="full">
+      <button class="btn primary" type="submit">Generar plan</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid stats mb">
+  <div class="stat">
+    <div class="label">Series</div>
+    <div class="value">{{ stats.series }}</div>
+    <div class="hint">{{ stats.unmatched }} por revisar</div>
+  </div>
+  <div class="stat">
+    <div class="label">Episodios</div>
+    <div class="value">{{ stats.episodes }}</div>
+    <div class="hint">{{ stats.present }} presentes · {{ stats.missing_gaps }} huecos aislados</div>
+  </div>
+  <div class="stat accent">
+    <div class="label">Archivos de vídeo</div>
+    <div class="value">{{ stats.videos }}</div>
+    <div class="hint">{{ stats.bytes|human_size }} en disco</div>
+  </div>
+  <div class="stat {{ 'warn' if stats.airing else '' }}">
+    <div class="label">En emisión</div>
+    <div class="value">{{ stats.airing }}</div>
+    <div class="hint">{{ stats.watch }} en seguimiento</div>
+  </div>
+  <div class="stat {{ 'bad' if stats.issues else 'good' }}">
+    <div class="label">Incidencias</div>
+    <div class="value">{{ stats.issues }}</div>
+    <div class="hint">sin resolver</div>
+  </div>
+  <div class="stat">
+    <div class="label">Por revisar</div>
+    <div class="value">{{ stats.unmatched }}</div>
+    <div class="hint">series sin emparejar</div>
+  </div>
+</div>
+
+<div class="grid two">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Último plan</h2>
+        <a class="btn small" href="/plans">Ver todos</a>
+      </div>
+      {% if plan %}
+        {% set s = plan.summary_data %}
+        <div class="row between">
+          <div>
+            <strong>Plan #{{ plan.id }}</strong>
+            <span class="badge {{ {'ready':'good','applied':'good','partial':'warn','error':'bad','undone':'info'}.get(plan.status, '') }}">{{ plan.status|status_es }}</span>
+          </div>
+          <span class="muted small">{{ plan.created_at|datetime_es }}</span>
+        </div>
+        <div class="summary-strip mt">
+          <span class="badge good">{{ s.get('move', 0) }} movimientos</span>
+          <span class="badge warn">{{ s.get('quarantine', 0) }} a cuarentena</span>
+          <span class="badge bad">{{ s.get('conflict', 0) }} conflictos</span>
+          <span class="badge info">{{ s.get('series', 0) }} series</span>
+          <span class="badge">{{ s.get('bytes', 0)|human_size }}</span>
+        </div>
+        {% if plan.status in ('ready', 'draft', 'partial') %}
+          <p class="muted small mt">Revisa el detalle y el informe antes de aplicar. Nada se ha movido todavía.</p>
+          <div class="btn-row">
+            <a class="btn primary" href="/plans/{{ plan.id }}">Revisar plan</a>
+            <a class="btn" href="/plans/{{ plan.id }}/report" target="_blank">Abrir informe HTML</a>
+          </div>
+        {% else %}
+          <div class="btn-row mt">
+            <a class="btn" href="/plans/{{ plan.id }}">Ver detalle</a>
+            {% if plan.status == 'applied' %}
+              <a class="btn" href="/plans/{{ plan.id }}/report" target="_blank">Informe</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty">
+          Todavía no hay ningún plan.<br>
+          <span class="small">Escanea y sincroniza, luego genera una previsualización.</span>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Incidencias recientes</h2>
+        <a class="btn small" href="/issues">Ver todas</a>
+      </div>
+      {% if issues %}
+        <div class="stack">
+          {% for issue in issues %}
+            <div class="row top" style="gap:.6rem">
+              <span class="dot {{ {'critical':'bad','error':'bad','warning':'warn','info':''}.get(issue.severity, '') }}" style="margin-top:.45rem"></span>
+              <div style="flex:1;min-width:0">
+                <div class="small">
+                  <span class="badge {{ {'critical':'bad','error':'bad','warning':'warn'}.get(issue.severity, 'info') }}">{{ issue.severity|status_es }}</span>
+                  {% if issue.series_title %}<a href="/series/{{ issue.series_id }}">{{ issue.series_title }}</a> · {% endif %}
+                  <span class="muted">{{ issue.code }}</span>
+                </div>
+                <div class="small break">{{ issue.message }}</div>
+              </div>
+              <form method="post" action="/issues/{{ issue.id }}/resolve">
+                <button class="btn tiny" type="submit">Resolver</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">Sin incidencias pendientes. Buen trabajo.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Trabajos recientes</h2>
+        <a class="btn small" href="/jobs">Historial</a>
+      </div>
+      {% if recent_jobs %}
+        <div class="table-wrap">
+          <table class="dense">
+            <thead><tr><th>Trabajo</th><th>Estado</th><th>Progreso</th><th>Creado</th></tr></thead>
+            <tbody>
+            {% for job in recent_jobs %}
+              <tr>
+                <td><a href="/jobs/{{ job.id }}">{{ job.label }}</a></td>
+                <td><span class="badge {{ {'done':'good','error':'bad','running':'accent','queued':'info'}.get(job.status,'') }}">{{ job.status|status_es }}</span></td>
+                <td class="num">{{ job.progress }}%</td>
+                <td class="muted small">{{ job.created_at|datetime_es }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">Aún no se ha ejecutado ningún trabajo.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Próximos estrenos</h2>
+        <a class="btn small" href="/airing">En emisión</a>
+      </div>
+      {% if upcoming %}
+        <div class="next-list">
+          {% for item in upcoming %}
+            <div class="next-item">
+              <span class="when">{{ item.when|datetime_es }}</span>
+              <span style="flex:1;min-width:0">
+                <strong>{{ item.title }}</strong>
+                {% if item.next_episode %}<span class="muted"> · episodio {{ item.next_episode }}</span>{% endif %}
+              </span>
+              <span class="muted tiny">{{ item.when|countdown }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">No hay episodios anunciados en los próximos 21 días para tu lista de seguimiento.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Series de la biblioteca en emisión</h2>
+        <a class="btn small" href="/series?airing=1">Ver series</a>
+      </div>
+      {% if upcoming_library %}
+        <div class="next-list">
+          {% for item in upcoming_library %}
+            <div class="next-item">
+              <span class="dot {{ 'warn' if item.next_air_at else 'good' }}"></span>
+              <span style="flex:1;min-width:0">
+                <a href="/series/{{ item.id }}"><strong>{{ item.title }}</strong></a>
+                {% if item.next_episode %}<span class="muted small"> · próximo E{{ item.next_episode }}</span>{% endif %}
+              </span>
+              <span class="muted tiny">{{ item.next_air_at|date_es if item.next_air_at else 'al día' }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">Ninguna serie está marcada como en emisión. Sincroniza los metadatos o márcalas manualmente.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Disco</h2></div>
+      {% if disk %}
+        <div class="row between small">
+          <span class="muted">{{ cfg.library_root }}</span>
+          <span>{{ disk.free|human_size }} libres</span>
+        </div>
+        <div class="progress mt"><span style="width: {{ disk.pct }}%"></span></div>
+        <div class="row between tiny muted mt">
+          <span>{{ disk.used|human_size }} usados de {{ disk.total|human_size }}</span>
+          <span>{{ disk.pct }}%</span>
+        </div>
+      {% else %}
+        <div class="empty small">No se pudo leer el disco de la biblioteca.</div>
+      {% endif %}
+      <hr>
+      <div class="kv">
+        <div><div class="k">Último escaneo</div><div class="v">{{ last_scan|datetime_es }}</div></div>
+        <div><div class="k">Última sincronización</div><div class="v">{{ last_sync|datetime_es }}</div></div>
+        <div><div class="k">Biblioteca principal</div><div class="v mono small">{{ cfg.library_root }}</div></div>
+        <div><div class="k">Anime en emisión</div><div class="v mono small">{{ cfg.airing_root }}</div></div>
+      </div>
+    </section>
+
+    <section class="panel flat">
+      <h3>Regla de oro</h3>
+      <p class="small muted">Este panel nunca borra archivos. Los duplicados van a cuarentena y cada movimiento queda en un diario que se puede deshacer.</p>
+      <div class="note small">
+        El plan es una previsualización. No se renombra ni se mueve nada hasta que escribas <strong>APLICAR</strong> en el detalle del plan.
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

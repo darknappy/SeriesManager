@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Identificar carpeta{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="small muted"><a href="/series">← Volver a series</a></div>
+    <h1>Identificar carpeta</h1>
+    <p>Crea un identificador manual para una carpeta cuyo nombre fue modificado o no coincide con ninguna ficha.</p>
+  </div>
+</div>
+
+<div class="grid two">
+  <section class="panel">
+    <div class="panel-head"><h2>Datos de la serie</h2></div>
+    <form method="post" action="/series/new">
+      <div class="form-grid">
+        <label class="field full">
+          <span>Carpeta de origen</span>
+          <input type="text" name="folder_name" list="folder-list" value="{{ carpeta }}" placeholder="Nombre exacto de la carpeta" required>
+          <datalist id="folder-list">
+            {% for folder in folder_choices %}<option value="{{ folder }}">{% endfor %}
+          </datalist>
+          <small class="muted">Solo el nombre de una carpeta de primer nivel de la biblioteca principal o de emisión.</small>
+        </label>
+        <label class="field full">
+          <span>Título</span>
+          <input type="text" name="title" value="{{ suggested_title }}" placeholder="Título de la serie" required>
+        </label>
+        <label class="field">
+          <span>Año</span>
+          <input type="number" name="year" value="{{ suggested_year }}" min="1900" max="2100" placeholder="Opcional">
+        </label>
+        <label class="field">
+          <span>Identificador local</span>
+          <input type="text" name="series_key" placeholder="Se genera del título si queda vacío">
+          <small class="muted">Clave interna estable. No cambies la de una ficha ya sembrada.</small>
+        </label>
+        <label class="field">
+          <span>TMDB ID</span>
+          <input type="text" name="tmdb_id" inputmode="numeric" placeholder="Opcional">
+          <small class="muted">Si la carpeta incluye <span class="mono">[tmdbid-…]</span>, se detecta solo.</small>
+        </label>
+        <label class="field">
+          <span>TVmaze ID</span>
+          <input type="text" name="tvmaze_id" inputmode="numeric" placeholder="Opcional">
+        </label>
+        <label class="field">
+          <span>AniList ID</span>
+          <input type="text" name="anilist_id" inputmode="numeric" placeholder="Opcional">
+        </label>
+        <label class="field full">
+          <span>Notas</span>
+          <textarea name="notes" rows="3" placeholder="Por qué esta carpeta pertenece a esta serie, nombre anterior, etc."></textarea>
+        </label>
+      </div>
+      <div class="btn-row mt">
+        <button class="btn primary" type="submit">Guardar identificador</button>
+        <a class="btn" href="/series">Cancelar</a>
+      </div>
+    </form>
+  </section>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Cómo se relacionan las carpetas</h2></div>
+      <div class="prose small">
+        <p>Las carpetas con <span class="mono">[tmdbid-12345]</span> se vinculan automáticamente a la ficha que ya tiene ese TMDB. No necesitan identificador manual.</p>
+        <p>Si renombraste una carpeta y perdiste el ID, usa este formulario. La ficha conserva sus episodios y archivos; solo se añade el alias de carpeta.</p>
+        <p>Si indicas un TMDB/TVmaze/AniList que ya pertenece a otra ficha, la carpeta se vincula a esa ficha canónica en vez de crear un duplicado.</p>
+        <p>Nada se mueve ni se renombra desde aquí. El siguiente escaneo usará el alias para asignar los archivos.</p>
+      </div>
+    </section>
+
+    {% if unidentified %}
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Pendientes de identificar</h2>
+        <span class="badge warn">{{ unidentified|length }}</span>
+      </div>
+      <div class="list">
+        {% for item in unidentified %}
+        <div class="list-row">
+          <div class="grow">
+            <div class="mono small break">{{ item.folder_name }}</div>
+            <div class="muted small">{{ item.series_title or 'Sin ficha' }}{% if item.video_count %} · {{ item.video_count }} vídeos{% endif %}</div>
+          </div>
+          <form method="get" action="/series/new">
+            <input type="hidden" name="carpeta" value="{{ item.folder_name }}">
+            <button class="btn tiny" type="submit">Usar</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

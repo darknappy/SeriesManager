@@ -1,0 +1,41 @@
+# Configuración local y secretos
+config.json
+.env
+.env.*
+*.secret
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Registros
+*.log
+
+# Bases de datos y datos de ejecución
+data/*.db
+data/*.db-*
+data/*.sqlite
+data/*.sqlite3
+data/backups/
+data/cache/
+data/logs/
+data/reports/
+jobs.db
+
+# Medios, cuarentena y entradas
+quarantine/
+inbox/
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

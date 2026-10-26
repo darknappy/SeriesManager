@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Duplicados{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Duplicados</h1>
+    <p>Los archivos idénticos se conservan: el plan los envía a cuarentena en lugar de borrarlos.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn" href="/quarantine">Ver cuarentena</a>
+    <form method="post" action="/jobs/start/plan"><input type="hidden" name="mode" value="full"><button class="btn primary" type="submit">Generar plan</button></form>
+  </div>
+</div>
+
+<div class="note mb small">
+  La detección exacta usa una huella de tamaño + primeros y últimos 1 MB. Un grupo marcado como «mismo episodio» puede contener versiones distintas (por ejemplo, 720p y 1080p): el plan conserva la mejor y manda el resto a cuarentena.
+</div>
+
+<section class="panel mb">
+  <div class="panel-head">
+    <h2>Archivos idénticos</h2>
+    <span class="muted small">{{ exact_groups|length }} grupos</span>
+  </div>
+  {% if exact_groups %}
+    {% for group in exact_groups %}
+      <div style="border:1px solid var(--line);border-radius:10px;margin-bottom:.7rem;overflow:hidden">
+        <div class="row between" style="padding:.5rem .7rem;background:var(--bg-soft);border-bottom:1px solid var(--line-soft)">
+          <div><span class="badge warn">{{ group.count }} copias</span> <span class="muted small">huella {{ group.fingerprint[:16] }}…</span></div>
+          <span class="muted small">{{ group.total|human_size }} en total</span>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <table class="dense">
+            <thead><tr><th>Serie</th><th>Ruta</th><th class="num">Tamaño</th><th>Resolución</th></tr></thead>
+            <tbody>
+            {% for file in group.files %}
+              <tr>
+                <td class="small">{% if file.series_id %}<a href="/series/{{ file.series_id }}">{{ file.series_title }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+                <td class="path"><span class="mono">{{ file.path }}</span></td>
+                <td class="num">{{ file.size|human_size }}</td>
+                <td>{{ file.resolution or '—' }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">No se han detectado archivos idénticos.</div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Mismo episodio, varios archivos</h2>
+    <span class="muted small">{{ episode_groups|length }} grupos</span>
+  </div>
+  {% if episode_groups %}
+    {% for group in episode_groups %}
+      <div style="border:1px solid var(--line);border-radius:10px;margin-bottom:.7rem;overflow:hidden">
+        <div class="row between" style="padding:.5rem .7rem;background:var(--bg-soft);border-bottom:1px solid var(--line-soft)">
+          <div>
+            <span class="badge warn">{{ group.count }} archivos</span>
+            {% set first = group.files[0] %}
+            <span class="muted small">
+              {% if first.season_number is not none %}S{{ '%02d'|format(first.season_number) }}E{{ '%02d'|format(first.episode_number|int) }}{% endif %}
+              {% if first.episode_title %} · {{ first.episode_title }}{% endif %}
+            </span>
+          </div>
+          <span class="muted small">{{ first.series_title if first.series_title else '' }}</span>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <table class="dense">
+            <thead><tr><th>Ruta</th><th class="num">Tamaño</th><th>Resolución</th><th>Huella</th><th>¿Idéntico?</th></tr></thead>
+            <tbody>
+            {% for file in group.files %}
+              <tr>
+                <td class="path"><span class="mono">{{ file.path }}</span></td>
+                <td class="num">{{ file.size|human_size }}</td>
+                <td>{{ file.resolution or '—' }}</td>
+                <td class="tiny mono">{{ (file.fingerprint or '—')[:12] }}</td>
+                <td>{% if file.path in exact_keys %}<span class="badge warn">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">Cada episodio tiene como máximo un archivo.</div>
+  {% endif %}
+</section>
+{% endblock %}

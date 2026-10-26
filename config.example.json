@@ -1,0 +1,46 @@
+{
+  "library_root": "D:\\Series",
+  "airing_root": "D:\\SeriesEnEmision",
+  "staging_roots": [
+    "D:\\Series\\En emision"
+  ],
+  "title_language": "english",
+  "include_tmdb_id": true,
+  "include_quality": false,
+  "include_episode_title": true,
+  "episode_title_max_len": 90,
+  "keep_episode_thumbs": true,
+  "quarantine_unparsed": false,
+  "special_decimals_to_season_zero": true,
+  "auto_match_threshold": 0.8,
+  "airing_horizon_days": 45,
+  "auto_graduate": false,
+  "web": {
+    "host": "127.0.0.1",
+    "port": 5055,
+    "open_browser": true
+  },
+  "jellyfin": {
+    "url": "http://127.0.0.1:8096",
+    "api_key": "",
+    "user_id": "",
+    "db_path": "C:\\ProgramData\\Jellyfin\\Server\\data\\jellyfin.db",
+    "main_library_path": "D:\\Series",
+    "airing_library_name": "Anime en emisión",
+    "airing_library_path": "D:\\SeriesEnEmision"
+  },
+  "providers": {
+    "tvmaze": true,
+    "anilist": true,
+    "tmdb": {
+      "enabled": false,
+      "api_key": ""
+    }
+  },
+  "http": {
+    "timeout": 30,
+    "cache_ttl_hours": 12,
+    "anilist_delay_ms": 850,
+    "tvmaze_delay_ms": 350
+  }
+}

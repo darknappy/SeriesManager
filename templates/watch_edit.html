@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Editar seguimiento{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="small muted"><a href="/airing">← Volver a en emisión</a></div>
+    <h1>Editar seguimiento</h1>
+    <p>{{ watch.title }}{% if watch.year %} <span class="muted">({{ watch.year }})</span>{% endif %}</p>
+  </div>
+  <span class="badge">{{ 'Manual' if watch.provider == 'manual' else 'AniList' }}</span>
+</div>
+
+<div class="grid two">
+  <section class="panel">
+    <div class="panel-head"><h2>Datos personales</h2></div>
+    <form method="post" action="/airing/watch/{{ watch.id }}/edit" class="form-grid">
+      {% if watch.provider == 'manual' %}
+        <label class="field full">
+          <span>Título</span>
+          <input type="text" name="title" value="{{ watch.title }}" required>
+        </label>
+        <label class="field">
+          <span>Total de episodios</span>
+          <input type="number" name="total_episodes" min="0" value="{{ watch.total_episodes if watch.total_episodes is not none else '' }}">
+        </label>
+      {% else %}
+        <input type="hidden" name="title" value="{{ watch.title }}">
+        <input type="hidden" name="total_episodes" value="{{ watch.total_episodes if watch.total_episodes is not none else '' }}">
+      {% endif %}
+      <label class="field">
+        <span>Estado</span>
+        <select name="watch_status">
+          {% for status in watch_statuses %}
+            <option value="{{ status }}" {{ 'selected' if status == watch.watch_status }}>{{ status }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span>Episodio visto</span>
+        <input type="number" name="progress_episode" min="0" step="1"
+               value="{{ watch.progress_episode|int if watch.progress_episode is not none else '' }}"
+               placeholder="0">
+      </label>
+      <label class="field">
+        <span>Nota personal (0–10)</span>
+        <input type="number" name="rating" min="0" max="10" step="1"
+               value="{{ watch.rating if watch.rating is not none else '' }}"
+               placeholder="Sin nota">
+      </label>
+      <label class="field full">
+        <span>Notas</span>
+        <textarea name="notes" placeholder="Dónde lo ves, horario, comentarios…">{{ watch.notes or '' }}</textarea>
+      </label>
+      <div class="form-actions full">
+        <a class="btn" href="/airing">Cancelar</a>
+        <button class="btn primary" type="submit">Guardar cambios</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head"><h2>Ficha</h2></div>
+      <div class="hero">
+        {% if watch.cover_url %}
+          <img class="cover" src="{{ watch.cover_url }}" alt="{{ watch.title }}" loading="lazy">
+        {% else %}
+          <div class="cover">▣</div>
+        {% endif %}
+        <div class="info">
+          <div class="kv">
+            <div><div class="k">Año</div><div class="v">{{ watch.year or '—' }}</div></div>
+            <div><div class="k">Episodios</div><div class="v">{{ watch.total_episodes or '—' }}</div></div>
+            <div><div class="k">Estado AniList</div><div class="v">{{ watch.status or '—' }}</div></div>
+            <div><div class="k">Próximo estreno</div><div class="v">{% if watch.next_episode %}E{{ watch.next_episode }} · {{ watch.next_air_at|datetime_es }}{% else %}—{% endif %}</div></div>
+            <div><div class="k">Visto</div><div class="v">{{ watch.progress_episode|int if watch.progress_episode is not none else '—' }}</div></div>
+            <div><div class="k">Último visto</div><div class="v">{{ watch.last_watched_at|datetime_es if watch.last_watched_at else '—' }}</div></div>
+          </div>
+          {% if watch.genres_list %}
+            <div class="row mt">
+              {% for genre in watch.genres_list %}<span class="badge">{{ genre }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="panel flat">
+      <h3>Atajos</h3>
+      <div class="btn-row mt">
+        <form method="post" action="/airing/watch/{{ watch.id }}/advance">
+          <button class="btn good" type="submit">+1 episodio visto</button>
+        </form>
+        {% if watch.provider == 'anilist' %}
+          <a class="btn" href="https://anilist.co/anime/{{ watch.provider_id }}" target="_blank" rel="noopener">Abrir en AniList</a>
+        {% endif %}
+      </div>
+      <form class="mt" method="post" action="/airing/watch/{{ watch.id }}/remove" data-confirm="¿Quitar «{{ watch.title }}» de la lista de seguimiento?">
+        <button class="btn danger" type="submit">Quitar de mi lista</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

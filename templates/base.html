@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Panel{% endblock %} · SeriesAdmin</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">▣</span>
+    <span>Series<strong>Admin</strong></span>
+  </a>
+  <nav class="nav">
+    <a href="/" class="{{ 'active' if active == 'dashboard' }}">Panel</a>
+    <a href="/series" class="{{ 'active' if active == 'series' }}">Series</a>
+    <a href="/plans" class="{{ 'active' if active == 'plans' }}">Planes</a>
+    <a href="/airing" class="{{ 'active' if active == 'airing' }}">En emisión</a>
+    <a href="/missing" class="{{ 'active' if active == 'missing' }}">Faltantes</a>
+    <a href="/duplicates" class="{{ 'active' if active == 'duplicates' }}">Duplicados</a>
+    <a href="/issues" class="{{ 'active' if active == 'issues' }}">Incidencias</a>
+    <a href="/quarantine" class="{{ 'active' if active == 'quarantine' }}">Cuarentena</a>
+    <a href="/reports" class="{{ 'active' if active == 'reports' }}">Informes</a>
+    <a href="/jobs" class="{{ 'active' if active == 'jobs' }}">Trabajos</a>
+    <a href="/settings" class="{{ 'active' if active == 'settings' }}">Ajustes</a>
+  </nav>
+  <div class="job-indicator" id="job-indicator" title="Trabajos en curso"></div>
+</header>
+
+{% if active_jobs %}
+<div class="job-banner" id="job-banner">
+  {% for job in active_jobs[:2] %}
+  <a href="/jobs/{{ job.id }}">
+    <span class="spinner"></span>
+    <strong>{{ job.label }}</strong>
+    <span class="muted">{{ job.progress }}%</span>
+    <span class="muted small">{{ job.message or '' }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="container">
+  {% if message %}<div class="flash ok">{{ message }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>SeriesAdmin · panel local · todo se previsualiza antes de aplicar</span>
+  <span class="muted">Biblioteca: {{ cfg.library_root }}</span>
+</footer>
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

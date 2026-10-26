@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Huecos y faltantes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Huecos y episodios faltantes</h1>
+    <p>Por defecto solo se muestran <strong>huecos aislados</strong> en temporadas que ya tienes casi completas. Las temporadas que viste y borraste, o que aún no descargaste, no se consideran incidencias.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn {{ 'primary' if not showing_all }}" href="/missing">Solo huecos aislados</a>
+    <a class="btn {{ 'primary' if showing_all }}" href="/missing?todos=1">Todos los faltantes</a>
+    <form method="post" action="/jobs/start/sync"><button class="btn" type="submit">Sincronizar</button></form>
+  </div>
+</div>
+
+<div class="grid stats mb">
+  <div class="stat warn">
+    <div class="label">{{ 'Faltan (todos)' if showing_all else 'Huecos aislados' }}</div>
+    <div class="value">{{ summary.missing }}</div>
+    <div class="hint">{% if showing_all %}{{ summary.gap_seasons }} temporadas con huecos · {{ summary.all_missing }} faltantes totales{% else %}de {{ summary.all_missing }} faltantes totales{% endif %}</div>
+  </div>
+  <div class="stat"><div class="label">Sin emitir</div><div class="value">{{ summary.unaired }}</div><div class="hint">aún no disponibles</div></div>
+  <div class="stat"><div class="label">Series afectadas</div><div class="value">{{ rows|length }}</div><div class="hint">{{ 'con algún faltante' if showing_all else 'con huecos aislados' }}</div></div>
+</div>
+
+<div class="grid two">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Por serie</h2>
+      <span class="muted small">{{ rows|length }} series</span>
+    </div>
+    {% if rows %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Serie</th>
+              <th class="num">Faltan</th>
+              {% if showing_all %}<th class="num">Sin emitir</th>{% endif %}
+              <th class="num">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for item in rows %}
+            <tr>
+              <td>
+                <a href="/missing?serie={{ item.id }}{{ '&todos=1' if showing_all }}{{ '&incluir_sin_emitir=1' if including_unaired }}"><strong>{{ item.title }}</strong></a>
+                {% if item.year %} <span class="muted small">({{ item.year }})</span>{% endif %}
+                {% if not showing_all and item.seasons %}
+                  <div class="muted tiny">
+                    {% for season in item.seasons %}T{{ '%02d'|format(season.season_number) }} ({{ season.present_count }}/{{ season.present_count + season.missing_count }}){% if not loop.last %} · {% endif %}{% endfor %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="num"><span class="badge {{ 'bad' if item.missing_count else '' }}">{{ item.missing_count }}</span></td>
+              {% if showing_all %}<td class="num"><span class="badge info">{{ item.unaired_count }}</span></td>{% endif %}
+              <td class="num">{{ item.total_count }}</td>
+              <td><a class="btn tiny" href="/series/{{ item.id }}">Ficha</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        {% if showing_all %}No hay episodios faltantes.{% else %}No hay huecos aislados que revisar. Las temporadas ausentes se ignoran a propósito.{% endif %}
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>{% if selected %}{{ selected.title }}{% else %}Detalle{% endif %}</h2>
+      {% if selected %}<a class="btn small" href="/series/{{ selected.id }}">Abrir ficha</a>{% endif %}
+    </div>
+    {% if selected %}
+      <div class="note small mb">
+        {% if showing_all %}Mostrando todos los faltantes de esta serie.{% else %}Mostrando solo huecos aislados en temporadas ya empezadas; las temporadas ausentes se ignoran.{% endif %}
+      </div>
+      {% if episodes %}
+        <div class="table-wrap">
+          <table class="dense">
+            <thead><tr><th>Episodio</th><th>Título</th><th>Emisión</th><th>Estado</th></tr></thead>
+            <tbody>
+            {% for episode in episodes %}
+              <tr>
+                <td class="mono">S{{ '%02d'|format(episode.season_number) }}E{{ '%02d'|format(episode.episode_number|int) }}</td>
+                <td>{{ episode.title or '—' }}</td>
+                <td class="muted small">{{ episode.air_date|date_es }}</td>
+                <td>{% if episode.status == 'missing' %}<span class="badge bad">Falta</span>{% else %}<span class="badge info">Sin emitir</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty small">Esta serie no tiene huecos aislados que revisar.</div>
+      {% endif %}
+    {% elif rows %}
+      <div class="empty small">Elige una serie de la lista para ver los episodios concretos.</div>
+    {% else %}
+      <div class="empty small">Nada que mostrar.</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Incidencias{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Incidencias</h1>
+    <p>Avisos del escaneo, la sincronización y el emparejamiento. Resolver una incidencia no modifica archivos.</p>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/issues/resolve-all" data-confirm="¿Marcar todas las incidencias pendientes como resueltas?"><button class="btn" type="submit">Resolver todas</button></form>
+  </div>
+</div>
+
+<form class="panel flat mb" method="get" action="/issues">
+  <div class="searchbar">
+    <label class="field" style="flex:0 1 160px">
+      <span>Severidad</span>
+      <select name="severity">
+        <option value="">Todas</option>
+        {% for value, label in [('critical','Crítico'),('error','Error'),('warning','Aviso'),('info','Info')] %}
+          <option value="{{ value }}" {{ 'selected' if severity == value }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field" style="flex:1 1 220px">
+      <span>Código</span>
+      <select name="code">
+        <option value="">Todos</option>
+        {% for item in codes %}
+          <option value="{{ item.code }}" {{ 'selected' if code == item.code }}>{{ item.code }} ({{ item.c }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="check" style="flex:0 0 auto;padding-bottom:.35rem">
+      <input type="checkbox" name="resueltas" value="1" {{ 'checked' if resueltas == '1' }}>
+      <span>Incluir resueltas</span>
+    </label>
+    <button class="btn primary" type="submit">Filtrar</button>
+    <a class="btn" href="/issues">Limpiar</a>
+  </div>
+</form>
+
+<section class="panel">
+  <div class="panel-head"><h2>Listado</h2><span class="muted small">{{ issues|length }} mostradas</span></div>
+  {% if issues %}
+    <div class="table-wrap">
+      <table class="dense">
+        <thead><tr><th>Severidad</th><th>Código</th><th>Serie</th><th>Mensaje</th><th>Creada</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        {% for issue in issues %}
+          <tr>
+            <td><span class="badge {{ {'critical':'bad','error':'bad','warning':'warn','info':'info'}.get(issue.severity,'') }}">{{ issue.severity|status_es }}</span></td>
+            <td class="mono tiny">{{ issue.code }}</td>
+            <td class="small">{% if issue.series_id %}<a href="/series/{{ issue.series_id }}">{{ issue.series_title or ('#' ~ issue.series_id) }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+            <td class="small break">
+              {{ issue.message }}
+              {% if issue.file_path %}<div class="tiny mono muted">{{ issue.file_path }}</div>{% endif %}
+            </td>
+            <td class="muted tiny nowrap">{{ issue.created_at|datetime_es }}</td>
+            <td>{% if issue.resolved %}<span class="badge good">Resuelta</span>{% else %}<span class="badge warn">Pendiente</span>{% endif %}</td>
+            <td>{% if not issue.resolved %}<form method="post" action="/issues/{{ issue.id }}/resolve"><button class="btn tiny" type="submit">Resolver</button></form>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">No hay incidencias con este filtro.</div>
+  {% endif %}
+</section>
+{% endblock %}

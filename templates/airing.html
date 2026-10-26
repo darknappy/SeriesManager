@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}En emisión y seguimiento{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Anime en emisión</h1>
+    <p>Catálogo de la temporada actual y tu lista personal de seguimiento. Temporada: <strong>{{ season_label }}</strong>.</p>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/airing/sync"><button class="btn" type="submit">Actualizar seguimiento</button></form>
+    <a class="btn" href="/airing?descubrir=1&temporada={{ season }}&ano={{ year }}">Descubrir {{ season_label }}</a>
+  </div>
+</div>
+
+<div class="grid two">
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>En emisión en tu biblioteca</h2>
+        <span class="muted small">{{ library|length }} series</span>
+      </div>
+      {% if library %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Serie</th><th>Estado</th><th>Última</th><th>Próxima</th><th>Biblioteca</th></tr></thead>
+            <tbody>
+            {% for item in library %}
+              <tr>
+                <td><a href="/series/{{ item.id }}"><strong>{{ item.title }}</strong></a>{% if item.year %} <span class="muted small">({{ item.year }})</span>{% endif %}</td>
+                <td><span class="badge {{ 'good' if item.state == 'En emisión' else ('warn' if item.state == 'Finalizada hace poco' else '') }}">{{ item.state }}</span></td>
+                <td class="muted small">{{ item.last_aired_label }}</td>
+                <td class="small">{% if item.next_episode %}E{{ item.next_episode }} · {{ item.next_air_label }}{% else %}—{% endif %}</td>
+                <td><span class="badge {{ 'accent' if item.root == 'airing' }}">{{ item.root|status_es }}</span></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty small">No hay series en emisión. Sincroniza los metadatos o marca alguna manualmente.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Próximos episodios</h2>
+        <span class="muted small">30 días</span>
+      </div>
+      {% if upcoming %}
+        <div class="next-list">
+          {% for item in upcoming %}
+            <div class="next-item">
+              <span class="when">{{ item.when|datetime_es }}</span>
+              <span style="flex:1;min-width:0">
+                <strong>{{ item.title }}</strong>
+                {% if item.next_episode %}<span class="muted small"> · E{{ item.next_episode }}</span>{% endif %}
+              </span>
+              <span class="muted tiny">{{ item.when|countdown }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">No hay episodios anunciados para tu lista en los próximos 30 días.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Descubrir temporada</h2>
+        <form class="inline-form" method="get" action="/airing">
+          <select name="temporada" style="width:auto">
+            {% for key, label in season_es.items() %}
+              <option value="{{ key }}" {{ 'selected' if key == season }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" name="ano" value="{{ year }}" min="1990" max="2100" style="width:90px">
+          <input type="hidden" name="descubrir" value="1">
+          <button class="btn" type="submit">Buscar</button>
+        </form>
+      </div>
+      {% if discover_error %}
+        <div class="flash error">No se pudo consultar AniList: {{ discover_error }}</div>
+      {% endif %}
+      {% if wants_discovery %}
+        {% if discovered %}
+          <div class="row between mb">
+            <p class="muted small" style="margin:0">{{ discovered|length }} animes en {{ season_label }}. Marca los que quieras seguir; los descargados se señalan automáticamente.</p>
+            <div class="summary-strip">
+              <span class="badge good">{{ discovery_summary.in_library or 0 }} en biblioteca</span>
+              <span class="badge info">{{ discovery_summary.staged or 0 }} con descargas</span>
+              <span class="badge accent">{{ discovery_summary.followed or 0 }} en seguimiento</span>
+            </div>
+          </div>
+          <form id="season-follow-form" method="post" action="/airing/watch/bulk">
+            <input type="hidden" name="temporada" value="{{ season }}">
+            <input type="hidden" name="ano" value="{{ year }}">
+            <div class="selection-bar">
+              <label class="check">
+                <input type="checkbox" id="season-select-all">
+                <span>Seleccionar todos</span>
+              </label>
+              <span class="small muted"><strong id="season-selected-count">0</strong> seleccionados</span>
+              <span class="spacer"></span>
+              <button class="btn primary" type="submit">Añadir seleccionados a seguimiento</button>
+            </div>
+            <div class="poster-grid mt">
+              {% for item in discovered %}
+                <div class="poster selectable {{ 'downloaded' if item.downloaded }}">
+                  <label class="poster-select" title="Seleccionar {{ item.title }}">
+                    <input type="checkbox" name="selected" value="{{ item.id }}" class="season-select-box">
+                    <span class="sr-only">Seleccionar {{ item.title }}</span>
+                  </label>
+                  {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="{{ item.title }}" loading="lazy">{% else %}<div class="cover wide">▣</div>{% endif %}
+                  <div class="poster-body">
+                    <div class="poster-title">{{ item.title }}</div>
+                    <div class="poster-meta">
+                      {{ item.format or '—' }} · {{ item.episodes or '?' }} eps{% if item.average_score %} · ★ {{ item.average_score }}{% endif %}
+                    </div>
+                    <div class="poster-meta">{{ item.status or '' }}</div>
+                    {% if item.next_episode %}<div class="tiny muted">Próximo E{{ item.next_episode }} · {{ item.next_air_at|date_es }}</div>{% endif %}
+                    <div class="poster-download">
+                      <span class="badge {{ {'library':'good','staging':'info','library-staging':'accent','none':''}.get(item.download_state, '') }}">{{ item.download_label }}</span>
+                      {% if item.followed %}<span class="badge accent">En seguimiento</span>{% endif %}
+                    </div>
+                    {% if item.staging_episodes %}
+                      <div class="tiny muted break">En descargas: {{ item.staging_episodes|join(', ') }}{% if item.staging_more %} +{{ item.staging_more }}{% endif %}</div>
+                    {% endif %}
+                    <div class="poster-actions">
+                      {% if item.library_series_id %}<a class="btn small" href="/series/{{ item.library_series_id }}">Ficha local</a>{% endif %}
+                      {% if item.site_url %}<a class="btn small" href="{{ item.site_url }}" target="_blank" rel="noopener">AniList</a>{% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </form>
+        {% else %}
+          <div class="empty small">No se encontraron animes para esa temporada. Prueba otra combinación.</div>
+        {% endif %}
+      {% else %}
+        <div class="empty small">Pulsa «Descubrir {{ season_label }}» para consultar AniList y ver la cartelera de la temporada.</div>
+      {% endif %}
+    </section>
+
+    <section class="panel flat">
+      <div class="panel-head">
+        <h2>Descargas en curso</h2>
+        <span class="badge {{ 'info' if staging_count else '' }}">{{ staging_count }} vídeos</span>
+      </div>
+      {% if staging_roots %}
+        <p class="small muted">Estas carpetas no se tratan como series. Se leen para marcar qué animes de la temporada ya tienes descargados.</p>
+        <div class="stack">
+          {% for path in staging_roots %}<div class="mono small break">{{ path }}</div>{% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">No hay carpetas de descargas configuradas. Añade «En emision», «Inbox» o «Descargas» en Ajustes.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Mi lista de seguimiento</h2>
+        <span class="muted small">{{ watchlist|length }} títulos editables</span>
+      </div>
+      {% if watchlist %}
+        <div class="stack">
+          {% for item in watchlist %}
+            <div class="watch-card">
+              {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="{{ item.title }}" loading="lazy">{% else %}<div class="cover" style="width:56px;height:80px">▣</div>{% endif %}
+              <div class="body">
+                <div class="row between" style="gap:.5rem">
+                  <div class="title">{{ item.title }}</div>
+                  <span class="badge {{ {'Completado':'good','Viendo':'accent','Pausado':'warn','Abandonado':'bad'}.get(item.watch_status, '') }}">{{ item.watch_status }}</span>
+                </div>
+                <div class="tiny muted">
+                  {{ item.year or '—' }} · {{ 'Manual' if item.provider == 'manual' else 'AniList' }}
+                  {% if item.genres_list %} · {{ item.genres_list[:3]|join(', ') }}{% endif %}
+                </div>
+                <div class="small">
+                  Visto <strong>{{ item.progress_label }}</strong>{% if item.total_episodes %} de {{ item.total_episodes }}{% endif %}
+                  {% if item.pending_episode and (not item.total_episodes or item.pending_episode <= item.total_episodes) %}
+                    · siguiente E{{ item.pending_episode }}
+                  {% endif %}
+                </div>
+                {% if item.total_episodes %}
+                  <div class="progress mt" title="{{ item.progress_percent }}%"><span style="width:{{ item.progress_percent }}%"></span></div>
+                {% endif %}
+                <div class="small mt">
+                  {% if item.next_episode %}Próximo estreno E{{ item.next_episode }} · {{ item.next_air_at|datetime_es }} <span class="muted tiny">{{ item.next_air_at|countdown }}</span>{% else %}Sin próximo episodio anunciado{% endif %}
+                </div>
+                {% if item.notes %}
+                  <div class="note small mt">{{ item.notes }}</div>
+                {% endif %}
+                <div class="row mt" style="gap:.35rem">
+                  <form method="post" action="/airing/watch/{{ item.id }}/advance">
+                    <button class="btn tiny good" type="submit" title="Marcar el siguiente episodio como visto">+1 visto</button>
+                  </form>
+                  <a class="btn tiny" href="/airing/watch/{{ item.id }}/edit">Editar</a>
+                  {% if item.provider == 'anilist' %}<a class="btn tiny" href="https://anilist.co/anime/{{ item.provider_id }}" target="_blank" rel="noopener">AniList</a>{% endif %}
+                  <form method="post" action="/airing/watch/{{ item.id }}/remove" data-confirm="¿Quitar «{{ item.title }}» de la lista de seguimiento?">
+                    <button class="btn tiny danger" type="submit">Quitar</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty small">Tu lista está vacía. Descubre la temporada y añade los animes que sigues, o crea un título manual.</div>
+      {% endif %}
+
+      <details class="help mt">
+        <summary>+ Añadir un título manual</summary>
+        <form method="post" action="/airing/watch/manual" class="form-grid mt">
+          <label class="field full">
+            <span>Título</span>
+            <input type="text" name="title" required placeholder="Ej.: Anime que sigo fuera de AniList">
+          </label>
+          <label class="field">
+            <span>Total de episodios</span>
+            <input type="number" name="total_episodes" min="0" placeholder="Opcional">
+          </label>
+          <label class="field">
+            <span>Estado</span>
+            <select name="watch_status">
+              {% for status in watch_statuses %}
+                <option value="{{ status }}" {{ 'selected' if status == 'Viendo' }}>{{ status }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field full">
+            <span>Notas</span>
+            <textarea name="notes" placeholder="Dónde lo ves, horario, comentarios…"></textarea>
+          </label>
+          <div class="form-actions full">
+            <button class="btn primary" type="submit">Añadir a mi lista</button>
+          </div>
+        </form>
+      </details>
+    </section>
+
+    <section class="panel flat">
+      <h3>Cómo funciona</h3>
+      <ul class="clean small muted">
+        <li>La biblioteca «Anime en emisión» es independiente de tu biblioteca principal.</li>
+        <li>El catálogo de temporada usa AniList; los episodios de tus series usan TVmaze.</li>
+        <li>Tu lista guarda estado, episodio visto, nota y notas personales; puedes editarla cuando quieras.</li>
+        <li>«+1 visto» avanza un episodio sin modificar los archivos de tu biblioteca.</li>
+        <li>Mover una serie a emisión es una decisión manual desde su ficha.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const form = document.getElementById("season-follow-form");
+  if (!form) return;
+  const boxes = Array.from(form.querySelectorAll(".season-select-box"));
+  const all = document.getElementById("season-select-all");
+  const count = document.getElementById("season-selected-count");
+  function update() {
+    const selected = boxes.filter(function (box) { return box.checked; }).length;
+    if (count) count.textContent = String(selected);
+    if (all) {
+      all.checked = selected > 0 && selected === boxes.length;
+      all.indeterminate = selected > 0 && selected < boxes.length;
+    }
+  }
+  if (all) {
+    all.addEventListener("change", function () {
+      boxes.forEach(function (box) { box.checked = all.checked; });
+      update();
+    });
+  }
+  boxes.forEach(function (box) { box.addEventListener("change", update); });
+  form.addEventListener("submit", function (event) {
+    if (!boxes.some(function (box) { return box.checked; })) {
+      event.preventDefault();
+      window.alert("Selecciona al menos un anime.");
+    }
+  });
+  update();
+})();
+</script>
+{% endblock %}

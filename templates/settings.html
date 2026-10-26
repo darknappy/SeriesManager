@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Ajustes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Ajustes</h1>
+    <p>Rutas, proveedores, reglas de nombres e integración con Jellyfin.</p>
+  </div>
+  <div class="btn-row">
+    <span class="badge">Último escaneo: {{ meta.get('last_scan')|datetime_es }}</span>
+    <span class="badge">Última sincronización: {{ meta.get('last_sync')|datetime_es }}</span>
+  </div>
+</div>
+
+<form method="post" action="/settings">
+  <div class="grid two">
+    <section class="panel">
+      <div class="panel-head"><h2>Bibliotecas</h2></div>
+      <div class="form-grid">
+        <label class="field full">
+          <span>Biblioteca principal</span>
+          <input type="text" name="library_root" value="{{ public.library_root }}" required>
+          <small class="muted">Carpeta actual de Jellyfin. Los archivos se renombran aquí.</small>
+        </label>
+        <label class="field full">
+          <span>Biblioteca de anime en emisión</span>
+          <input type="text" name="airing_root" value="{{ public.airing_root }}" required>
+          <small class="muted">Carpeta independiente para las series que decidas mover a emisión.</small>
+        </label>
+        <label class="field full">
+          <span>Carpetas de descargas en curso</span>
+          <textarea name="staging_roots" rows="3" placeholder="D:\Series\En emision&#10;D:\Series\Descargas">{{ staging_roots_text }}</textarea>
+          <small class="muted">Una por línea. No se escanean como series; se usan para detectar qué animes de la temporada ya tienes descargados. También se detectan solas carpetas llamadas «En emision», «Inbox» o «Descargas» dentro de la biblioteca.</small>
+        </label>
+        <label class="field">
+          <span>Umbral de emparejamiento automático</span>
+          <input type="number" step="0.01" min="0.1" max="1" name="auto_match_threshold" value="{{ public.auto_match_threshold }}">
+        </label>
+        <label class="field">
+          <span>Días considerados «en emisión»</span>
+          <input type="number" min="7" max="365" name="airing_horizon_days" value="{{ public.airing_horizon_days }}">
+        </label>
+      </div>
+      <hr>
+      <div class="stack">
+        <label class="check"><input type="checkbox" name="include_tmdb_id" {{ 'checked' if public.include_tmdb_id }}><span>Incluir <code>[tmdbid-…]</code> en la carpeta de la serie<br><small>Recomendado para que Jellyfin identifique la ficha correcta.</small></span></label>
+        <label class="check"><input type="checkbox" name="include_episode_title" {{ 'checked' if public.include_episode_title }}><span>Incluir el título del episodio en el nombre del archivo</span></label>
+        <label class="check"><input type="checkbox" name="include_quality" {{ 'checked' if public.include_quality }}><span>Incluir la calidad (720p, WEB, etc.) en el nombre</span></label>
+        <label class="check"><input type="checkbox" name="keep_episode_thumbs" {{ 'checked' if public.keep_episode_thumbs }}><span>Conservar miniaturas de episodios<br><small>Si no, se envían a cuarentena; Jellyfin genera las suyas.</small></span></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Jellyfin</h2></div>
+      <div class="form-grid">
+        <label class="field full"><span>URL del servidor</span><input type="text" name="jellyfin_url" value="{{ public.jellyfin.url }}" placeholder="http://127.0.0.1:8096"></label>
+        <label class="field full">
+          <span>Clave API</span>
+          <input type="password" name="jellyfin_api_key" value="" placeholder="{{ public.jellyfin.api_key or 'Pega aquí la clave API' }}" autocomplete="off">
+          <small class="muted">Si la dejas en blanco se conserva la actual. Se crea en Jellyfin → Panel → API Keys.</small>
+        </label>
+        <label class="field full"><span>Base de datos local de Jellyfin (solo lectura)</span><input type="text" name="jellyfin_db_path" value="{{ public.jellyfin.db_path }}"></label>
+        <label class="field"><span>Nombre de la biblioteca de emisión</span><input type="text" name="airing_library_name" value="{{ public.jellyfin.airing_library_name }}"></label>
+        <label class="field"><span>Ruta de la biblioteca de emisión</span><input type="text" name="airing_library_path" value="{{ public.jellyfin.airing_library_path }}"></label>
+      </div>
+      <div class="note small mt">La integración con la API es opcional para previsualizar. Para crear la biblioteca o refrescar Jellyfin sí necesitas la clave API.</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Proveedores</h2></div>
+      <div class="stack">
+        <label class="check"><input type="checkbox" name="tvmaze" {{ 'checked' if public.providers.tvmaze }}><span>TVmaze<br><small>Temporadas, episodios, fechas de emisión y sinopsis. Es la fuente principal.</small></span></label>
+        <label class="check"><input type="checkbox" name="anilist" {{ 'checked' if public.providers.anilist }}><span>AniList<br><small>Catálogo de temporada, estado de emisión y próximos episodios de anime.</small></span></label>
+        <label class="check"><input type="checkbox" disabled><span>TMDB API<br><small>Desactivado por decisión del proyecto: usamos los IDs que ya tiene Jellyfin y TVmaze/AniList como fuentes gratuitas.</small></span></label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Panel web</h2></div>
+      <div class="form-grid">
+        <label class="field"><span>Host</span><input type="text" name="web_host" value="{{ public.web.host }}"></label>
+        <label class="field"><span>Puerto</span><input type="number" min="1024" max="65535" name="web_port" value="{{ public.web.port }}"></label>
+      </div>
+      <p class="small muted mt">El panel escucha solo en local por defecto. Reinicia el proceso para aplicar un puerto nuevo.</p>
+    </section>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn primary" type="submit">Guardar ajustes</button>
+  </div>
+</form>
+
+<div class="grid two mt">
+  <section class="panel">
+    <div class="panel-head"><h2>Comprobaciones</h2></div>
+    <p class="small muted">Prueba la conexión con los proveedores y con Jellyfin. Los resultados se muestran al volver a esta página.</p>
+    <div class="btn-row">
+      <form method="post" action="/settings/test/providers"><button class="btn" type="submit">Probar TVmaze y AniList</button></form>
+      <form method="post" action="/settings/test/jellyfin"><button class="btn" type="submit">Probar Jellyfin</button></form>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Acciones de Jellyfin</h2></div>
+    <p class="small muted">Crear la biblioteca «{{ public.jellyfin.airing_library_name }}», refrescar el catálogo o respaldar el estado visto.</p>
+    <div class="btn-row">
+      <form method="post" action="/settings/jellyfin/create-library" data-confirm="¿Crear la biblioteca de anime en emisión en Jellyfin?"><button class="btn" type="submit">Crear biblioteca de emisión</button></form>
+      <form method="post" action="/settings/jellyfin/refresh"><button class="btn" type="submit">Refrescar Jellyfin</button></form>
+      <form method="post" action="/settings/jellyfin/backup"><button class="btn" type="submit">Respaldar estado visto</button></form>
+    </div>
+  </section>
+</div>
+
+<section class="panel flat mt">
+  <h3>Rutas internas del programa</h3>
+  <div class="kv">
+    <div><div class="k">Base de datos</div><div class="v mono small">{{ cfg.db_path }}</div></div>
+    <div><div class="k">Cuarentena</div><div class="v mono small">{{ cfg.quarantine_root }}</div></div>
+    <div><div class="k">Informes</div><div class="v mono small">{{ cfg.reports_root }}</div></div>
+    <div><div class="k">Caché HTTP</div><div class="v mono small">{{ cfg.cache_root }}</div></div>
+  </div>
+</section>
+{% endblock %}

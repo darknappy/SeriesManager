@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Informes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Informes</h1>
+    <p>Informes HTML independientes generados para cada plan. Se pueden abrir sin el panel.</p>
+  </div>
+  <button class="btn" type="button" data-copy="{{ cfg.reports_root }}">Copiar carpeta</button>
+</div>
+
+<section class="panel">
+  {% if files %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Informe</th><th class="num">Tamaño</th><th>Modificado</th><th></th></tr></thead>
+        <tbody>
+        {% for file in files %}
+          <tr>
+            <td class="mono">{{ file.name }}</td>
+            <td class="num">{{ file.size|human_size }}</td>
+            <td class="muted small">{{ file.mtime|datetime_es }}</td>
+            <td><a class="btn tiny" href="{{ file.url }}" target="_blank">Abrir</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Todavía no se ha generado ningún informe. Crea un plan para producir uno.</div>
+  {% endif %}
+</section>
+{% endblock %}

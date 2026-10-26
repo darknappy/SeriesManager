@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informe del plan #{{ plan.id }} · SeriesAdmin</title>
+  <style>
+    :root { --ink:#1a2233; --muted:#6b7486; --line:#dfe4ec; --soft:#f5f7fb; --accent:#5b4fe0; --green:#0f8a5f; --warn:#9a6700; --bad:#b42318; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#eef1f6; color:var(--ink); font:14px/1.55 "Segoe UI", Inter, system-ui, sans-serif; }
+    .page { max-width: 1400px; margin: 0 auto; background:white; min-height:100vh; padding: 34px 38px 60px; }
+    header { display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; border-bottom:3px solid var(--accent); padding-bottom:16px; margin-bottom:22px; }
+    h1 { margin:0; font-size:1.75rem; letter-spacing:-.02em; }
+    h2 { margin:26px 0 10px; font-size:1.15rem; }
+    .brand { color:var(--accent); font-weight:700; letter-spacing:.02em; }
+    .muted { color:var(--muted); }
+    .small { font-size:.82rem; }
+    .tiny { font-size:.74rem; }
+    .mono { font-family:"Cascadia Code", Consolas, monospace; font-size:.78rem; word-break:break-all; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line); background:var(--soft); font-size:.72rem; font-weight:600; white-space:nowrap; }
+    .badge.green { color:var(--green); border-color:#b7e4d1; background:#effaf5; }
+    .badge.warn { color:var(--warn); border-color:#f3dfa2; background:#fff8e5; }
+    .badge.bad { color:var(--bad); border-color:#f5c2bd; background:#fff3f2; }
+    .badge.accent { color:var(--accent); border-color:#d2cdfa; background:#f3f1ff; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+    .card { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:linear-gradient(180deg,#fff,#fafbfe); }
+    .card .label { color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
+    .card .value { font-size:1.35rem; font-weight:700; margin-top:1px; }
+    .notice { border-left:4px solid var(--accent); background:#f3f1ff; padding:10px 14px; border-radius:0 8px 8px 0; margin:16px 0; }
+    .notice.warn { border-left-color:#d4a017; background:#fff8e5; }
+    .notice.bad { border-left-color:var(--bad); background:#fff3f2; }
+    table { width:100%; border-collapse:collapse; font-size:.8rem; }
+    thead th { position:sticky; top:0; background:#f3f5fa; text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; }
+    td { padding:6px 8px; border-bottom:1px solid #edf0f5; vertical-align:top; }
+    tr:hover td { background:#fafbff; }
+    td.num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .path { max-width:380px; color:#414b60; }
+    .table-wrap { overflow:auto; max-height:70vh; border:1px solid var(--line); border-radius:10px; }
+    ul { margin:6px 0; padding-left:20px; }
+    li { margin:3px 0; }
+    .footer { margin-top:36px; border-top:1px solid var(--line); padding-top:12px; color:var(--muted); font-size:.76rem; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .toolbar { margin:12px 0 18px; }
+    .toolbar button { font:inherit; padding:7px 12px; border-radius:8px; border:1px solid var(--line); background:white; cursor:pointer; }
+    @media print {
+      body { background:white; }
+      .page { padding:0; max-width:none; }
+      .toolbar { display:none; }
+      .table-wrap { max-height:none; overflow:visible; border:none; }
+      thead th { position:static; }
+      tr { break-inside:avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <div class="brand">SeriesAdmin</div>
+      <h1>Informe del plan #{{ plan.id }}</h1>
+      <div class="muted small">Generado el {{ generated_at }} · modo {{ {'full':'completo','airing':'en emisión','repair':'reparación'}.get(plan.mode, plan.mode) }}</div>
+    </div>
+    <div style="text-align:right">
+      {% set status_labels = {'ready':'Listo para revisar','draft':'Borrador','building':'Generando','applying':'Aplicando','applied':'Aplicado','partial':'Aplicado parcialmente','undone':'Deshecho'} %}
+      <span class="badge {{ 'accent' if plan.status in ('ready','building','applying') else ('green' if plan.status == 'applied' else ('warn' if plan.status == 'partial' else 'bad')) }}">{{ status_labels.get(plan.status, plan.status) }}</span>
+      <div class="muted small" style="margin-top:6px">Creado: {{ plan.created_at }}</div>
+      {% if plan.applied_at %}<div class="muted small">Aplicado: {{ plan.applied_at }}</div>{% endif %}
+    </div>
+  </header>
+
+  {% if plan.status in ('ready','draft') %}
+    <div class="notice"><strong>Previsualización.</strong> Este informe describe lo que haría el plan. Ningún archivo se ha renombrado, movido ni borrado todavía. La aplicación requiere confirmación explícita.</div>
+  {% elif plan.status == 'applied' %}
+    <div class="notice"><strong>Plan aplicado.</strong> Las operaciones se registraron en el diario y se pueden deshacer desde el panel.</div>
+  {% elif plan.status == 'partial' %}
+    <div class="notice warn"><strong>Plan aplicado parcialmente.</strong> Revisa las acciones con error y el diario antes de deshacer o reintentar.</div>
+  {% endif %}
+
+  <div class="cards">
+    <div class="card"><div class="label">Series</div><div class="value">{{ summary.get('series', 0) }}</div><div class="muted tiny">con archivos</div></div>
+    <div class="card"><div class="label">Movimientos</div><div class="value">{{ summary.get('move', 0) }}</div><div class="muted tiny">renombrar / mover</div></div>
+    <div class="card"><div class="label">Cuarentena</div><div class="value">{{ summary.get('quarantine', 0) }}</div><div class="muted tiny">duplicados conservados</div></div>
+    <div class="card"><div class="label">Conflictos</div><div class="value">{{ summary.get('conflict', 0) }}</div><div class="muted tiny">no se aplicarán</div></div>
+    <div class="card"><div class="label">Conservados</div><div class="value">{{ summary.get('keep', 0) }}</div><div class="muted tiny">ya estaban en su sitio</div></div>
+    <div class="card"><div class="label">Volumen</div><div class="value">{{ summary.get('bytes', 0)|human_size }}</div><div class="muted tiny">afectado</div></div>
+    <div class="card"><div class="label">Archivos en plan</div><div class="value">{{ summary.get('files', actions|length) }}</div><div class="muted tiny">acciones totales</div></div>
+    <div class="card"><div class="label">Catálogo</div><div class="value">{{ series_count }}</div><div class="muted tiny">{{ episode_count }} episodios · {{ file_count }} vídeos</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" onclick="window.print()">Imprimir / guardar PDF</button>
+  </div>
+
+  {% if summary.get('warnings') %}
+    <h2>Avisos</h2>
+    <ul class="small">
+      {% for warning in summary.get('warnings', []) %}<li>{{ warning }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <h2>Acciones ({{ actions|length }})</h2>
+  {% if actions %}
+    {% set action_labels = {'move':'Mover','rename':'Renombrar','quarantine':'Cuarentena','conflict':'Conflicto','keep':'Conservar'} %}
+    {% set status_labels = {'pending':'Pendiente','done':'Hecho','error':'Error','skipped':'Omitido'} %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Acción</th><th>Serie</th><th>Origen</th><th>Destino</th><th>Tamaño</th><th>Estado</th><th>Motivo</th></tr>
+        </thead>
+        <tbody>
+        {% for action in actions %}
+          <tr>
+            <td class="num">{{ action.seq }}</td>
+            <td><span class="badge {{ 'green' if action.action in ('move','rename') else ('warn' if action.action == 'quarantine' else ('bad' if action.action == 'conflict' else '')) }}">{{ action_labels.get(action.action, action.action) }}</span></td>
+            <td class="small">{% if action.series_title %}{{ action.series_title }}{% if action.series_year %} ({{ action.series_year }}){% endif %}{% else %}—{% endif %}</td>
+            <td class="path mono">{{ action.source or '—' }}</td>
+            <td class="path mono">{{ action.target or '—' }}</td>
+            <td class="num">{{ action.size|human_size }}</td>
+            <td class="small">{{ status_labels.get(action.status, action.status) }}{% if action.error %}<div class="badge bad">{{ action.error }}</div>{% endif %}</td>
+            <td class="small">{{ action.reason or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">El plan no contiene acciones. Puede que todo esté ya en su sitio o que falte escanear.</p>
+  {% endif %}
+
+  {% if issues %}
+    <h2>Incidencias abiertas</h2>
+    <ul class="small">
+      {% for issue in issues %}
+        <li><span class="badge {{ 'bad' if issue.severity in ('critical','error') else 'warn' }}">{{ issue.severity }}</span> {{ issue.message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <div class="footer">
+    <span>SeriesAdmin · informe local · no se ha eliminado ningún archivo</span>
+    <span class="mono">{{ plan.id }} · {{ generated_at }}</span>
+  </div>
+</div>
+</body>
+</html>

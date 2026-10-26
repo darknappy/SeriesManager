@@ -1,0 +1,448 @@
+{
+  "version": 1,
+  "series": [
+    {
+      "key": "aharen-san-wa-hakarenai",
+      "title": "Aharen-san wa Hakarenai",
+      "year": 2022,
+      "tmdb_id": "130237",
+      "tvmaze_id": 59516,
+      "aliases": ["Aharen Is Indecipherable", "阿波連さんははかれない"],
+      "search_titles": ["Aharen-san wa Hakarenai", "Aharen Is Indecipherable"],
+      "media_type": "anime"
+    },
+    {
+      "key": "ascendance-of-a-bookworm",
+      "title": "Ascendance of a Bookworm",
+      "year": 2019,
+      "tmdb_id": "91768",
+      "tvmaze_id": 43540,
+      "aliases": ["Honzuki no Gekokujou", "本好きの下剋上"],
+      "search_titles": ["Ascendance of a Bookworm"],
+      "media_type": "anime"
+    },
+    {
+      "key": "became-a-legend",
+      "title": "I Became a Legend After My 10-Year-Long Last Stand",
+      "year": 2026,
+      "tmdb_id": "302051",
+      "tvmaze_id": 90730,
+      "aliases": ["Became a Legend after My 10 Year Long Last Stand"],
+      "search_titles": ["I Became a Legend After My 10 Year-Long Last Stand"],
+      "media_type": "anime"
+    },
+    {
+      "key": "orb",
+      "title": "Orb: On the Movements of the Earth",
+      "year": 2024,
+      "tmdb_id": "204635",
+      "tvmaze_id": 79152,
+      "aliases": ["Chi: Chikyuu no Undou ni Tsuite", "チ。―地球の運動について―"],
+      "search_titles": ["Orb: On the Movements of the Earth", "Chi - Chikyuu no Undou ni Tsuite"],
+      "media_type": "anime"
+    },
+    {
+      "key": "chobits",
+      "title": "Chobits",
+      "year": 2002,
+      "tmdb_id": "37527",
+      "tvmaze_id": 5284,
+      "aliases": ["ちょびっツ"],
+      "search_titles": ["Chobits"],
+      "media_type": "anime"
+    },
+    {
+      "key": "daemons-of-the-shadow-realm",
+      "title": "Daemons of the Shadow Realm",
+      "year": 2026,
+      "tmdb_id": "260463",
+      "tvmaze_id": 90197,
+      "aliases": ["Yomi no Tsugai", "黄泉のツガイ"],
+      "search_titles": ["Daemons of the Shadow Realm", "Yomi no Tsugai"],
+      "media_type": "anime"
+    },
+    {
+      "key": "fate-strange-fake",
+      "title": "Fate/strange Fake",
+      "year": 2024,
+      "tmdb_id": "229858",
+      "tvmaze_id": 89089,
+      "aliases": ["Fate strange Fake", "Fate/strange fake"],
+      "search_titles": ["Fate/strange Fake"],
+      "media_type": "anime"
+    },
+    {
+      "key": "from-old-country-bumpkin",
+      "title": "From Old Country Bumpkin to Master Swordsman",
+      "year": 2025,
+      "tmdb_id": "260823",
+      "tvmaze_id": 80469,
+      "aliases": ["Katainaka no Ossan, Kensei ni Naru"],
+      "search_titles": ["From Old Country Bumpkin to Master Swordsman"],
+      "media_type": "anime"
+    },
+    {
+      "key": "gits-sac",
+      "title": "Ghost in the Shell: Stand Alone Complex",
+      "year": 2002,
+      "tmdb_id": "1095",
+      "tvmaze_id": 1935,
+      "aliases": ["Koukaku Kidoutai: Stand Alone Complex", "攻殻機動隊 STAND ALONE COMPLEX"],
+      "search_titles": ["Ghost in the Shell: Stand Alone Complex"],
+      "media_type": "anime"
+    },
+    {
+      "key": "gits-arise",
+      "title": "Ghost in the Shell: Arise - Alternative Architecture",
+      "year": 2015,
+      "tmdb_id": "62070",
+      "tvmaze_id": 8247,
+      "aliases": ["Koukaku Kidoutai Arise: Alternative Architecture"],
+      "search_titles": ["Ghost in the Shell: Arise - Alternative Architecture"],
+      "media_type": "anime"
+    },
+    {
+      "key": "gits-sac-2045",
+      "title": "Ghost in the Shell: SAC_2045",
+      "year": 2020,
+      "tmdb_id": "90293",
+      "tvmaze_id": 39990,
+      "aliases": ["Koukaku Kidoutai: SAC_2045"],
+      "search_titles": ["Ghost in the Shell: SAC_2045"],
+      "media_type": "anime"
+    },
+    {
+      "key": "yashahime",
+      "title": "Yashahime: Princess Half-Demon",
+      "year": 2020,
+      "tmdb_id": "103254",
+      "tvmaze_id": 49585,
+      "aliases": ["Hanyou no Yashahime", "半妖の夜叉姫"],
+      "search_titles": ["Yashahime: Princess Half-Demon"],
+      "media_type": "anime"
+    },
+    {
+      "key": "inuyasha",
+      "title": "InuYasha",
+      "year": 2000,
+      "tmdb_id": "35610",
+      "tvmaze_id": 4247,
+      "aliases": ["Inuyasha", "InuYasha Kanketsu-hen", "犬夜叉", "犬夜叉 完結編"],
+      "search_titles": ["InuYasha", "InuYasha: The Final Act", "InuYasha Kanketsu-hen"],
+      "media_type": "anime",
+      "absolute_numbering": true,
+      "absolute_seasons": [1, 2, 3, 4, 5, 6, 7],
+      "total_episodes": 193,
+      "notes": "Serie única con 7 temporadas. Los archivos 001-167 usan numeración absoluta y se reparten entre las temporadas 1-6; los 26 episodios de Kanketsu-hen/The Final Act son la temporada 7. Se usa la ficha TMDB 35610 para que Jellyfin la identifique como una sola serie."
+    },
+    {
+      "key": "kim-possible",
+      "title": "Kim Possible",
+      "year": 2002,
+      "tmdb_id": "2345",
+      "tvmaze_id": 2557,
+      "aliases": ["Kim Possible"],
+      "search_titles": ["Kim Possible"],
+      "media_type": "western"
+    },
+    {
+      "key": "100-girlfriends",
+      "title": "The 100 Girlfriends Who Really, Really, Really, Really, Really Love You",
+      "year": 2023,
+      "tmdb_id": "223564",
+      "tvmaze_id": 70514,
+      "aliases": ["100 Kanojo", "Kimi no Koto ga Dai Dai Dai Dai Daisuki na 100 nin no Kanojo"],
+      "search_titles": ["The 100 Girlfriends Who Really, Really, Really, Really, Really Love You", "100 Kanojo"],
+      "media_type": "anime"
+    },
+    {
+      "key": "lanterns",
+      "title": "Lanterns",
+      "year": 2026,
+      "tmdb_id": "95350",
+      "tvmaze_id": 44776,
+      "aliases": ["Linternas"],
+      "search_titles": ["Lanterns"],
+      "media_type": "western"
+    },
+    {
+      "key": "link-click",
+      "title": "Link Click",
+      "year": 2021,
+      "tmdb_id": "123542",
+      "tvmaze_id": 55050,
+      "aliases": ["LINK CLICK", "Shiguang Dailiren", "时光代理人"],
+      "search_titles": ["Link Click"],
+      "media_type": "anime"
+    },
+    {
+      "key": "lord-of-mysteries",
+      "title": "Lord of Mysteries",
+      "year": 2025,
+      "tmdb_id": "232230",
+      "tvmaze_id": 70766,
+      "aliases": ["Guimi Zhi Zhu", "诡秘之主"],
+      "search_titles": ["Lord of Mysteries"],
+      "media_type": "anime"
+    },
+    {
+      "key": "macross",
+      "title": "Macross",
+      "year": 1982,
+      "tmdb_id": "21734",
+      "tvmaze_id": 36395,
+      "aliases": ["Super Dimension Fortress Macross", "Choujikuu Yousai Macross", "超時空要塞マクロス"],
+      "search_titles": ["Macross"],
+      "media_type": "anime",
+      "notes": "La ficha anterior de Jellyfin (Macross 7, TMDB 21735) era incorrecta."
+    },
+    {
+      "key": "macross-ii",
+      "title": "Macross II: Lovers Again",
+      "year": 1992,
+      "tmdb_id": "82247",
+      "total_episodes": 6,
+      "aliases": ["Super Dimensional Fortress Macross II: Lovers Again", "Macross 2"],
+      "search_titles": ["Macross II: Lovers Again"],
+      "media_type": "anime",
+      "notes": "La ficha anterior de Jellyfin (Macross Delta, TMDB 66111) era incorrecta."
+    },
+    {
+      "key": "macross-delta",
+      "title": "Macross Delta",
+      "year": 2016,
+      "tmdb_id": "66111",
+      "tvmaze_id": 11082,
+      "aliases": ["Macross Δ"],
+      "search_titles": ["Macross Delta"],
+      "media_type": "anime"
+    },
+    {
+      "key": "macross-plus",
+      "title": "Macross Plus",
+      "year": 1994,
+      "tmdb_id": "21733",
+      "total_episodes": 4,
+      "aliases": ["Macross Plus"],
+      "search_titles": ["Macross Plus"],
+      "media_type": "anime"
+    },
+    {
+      "key": "macross-zero",
+      "title": "Macross Zero",
+      "year": 2002,
+      "tmdb_id": "60682",
+      "total_episodes": 5,
+      "aliases": ["Macross Zero"],
+      "search_titles": ["Macross Zero"],
+      "media_type": "anime"
+    },
+    {
+      "key": "mao",
+      "title": "MAO",
+      "year": 2026,
+      "tmdb_id": "295999",
+      "tvmaze_id": 90866,
+      "aliases": ["Mao", "MAO"],
+      "search_titles": ["MAO"],
+      "media_type": "anime",
+      "season_layout": "single",
+      "total_episodes": 26,
+      "notes": "TVmaze divide la emisión en dos temporadas de 13; Jellyfin/TMDB la muestra como una sola temporada de 26. Se usa una sola temporada."
+    },
+    {
+      "key": "road-to-the-top",
+      "title": "Uma Musume: Pretty Derby - Road to the Top",
+      "year": 2023,
+      "tmdb_id": "223251",
+      "tvmaze_id": 87602,
+      "aliases": ["Uma Musume Pretty Derby - Road to the Top", "Musume Pretty Derby - Road to the Top"],
+      "search_titles": ["Uma Musume: Pretty Derby - Road to the Top"],
+      "media_type": "anime"
+    },
+    {
+      "key": "our-last-crusade",
+      "title": "Our Last Crusade or the Rise of a New World",
+      "year": 2020,
+      "tmdb_id": "101972",
+      "tvmaze_id": 50528,
+      "aliases": ["Kimi to Boku no Saigo no Senjou, Aruiha Sekai ga Hajimaru Seisen", "Kimisen"],
+      "search_titles": ["Our Last Crusade or the Rise of a New World"],
+      "media_type": "anime"
+    },
+    {
+      "key": "record-of-lodoss-war",
+      "title": "Record of Lodoss War",
+      "year": 1990,
+      "tmdb_id": "42713",
+      "tvmaze_id": 17972,
+      "aliases": ["Lodoss-tou Senki", "ロードス島戦記"],
+      "search_titles": ["Record of Lodoss War"],
+      "media_type": "anime"
+    },
+    {
+      "key": "rooster-fighter",
+      "title": "Rooster Fighter",
+      "year": 2026,
+      "tmdb_id": "259819",
+      "tvmaze_id": 78631,
+      "aliases": ["Niwa no Tori", "Rooster Fighter"],
+      "search_titles": ["Rooster Fighter"],
+      "media_type": "anime"
+    },
+    {
+      "key": "serial-experiments-lain",
+      "title": "Serial Experiments Lain",
+      "year": 1998,
+      "tmdb_id": "1087",
+      "tvmaze_id": 1938,
+      "aliases": ["Serial Experiment Lain", "Serial Experiments Lain"],
+      "search_titles": ["Serial Experiments Lain"],
+      "media_type": "anime",
+      "notes": "La ficha anterior de Jellyfin no estaba emparejada."
+    },
+    {
+      "key": "smoking-behind-the-supermarket",
+      "title": "Smoking Behind the Supermarket with You",
+      "year": 2026,
+      "tmdb_id": "296286",
+      "tvmaze_id": 89905,
+      "aliases": ["Super no Ura de Yani Suu Futari", "スーパーの裏でヤニ吸うふたり"],
+      "search_titles": ["Smoking Behind the Supermarket with You"],
+      "media_type": "anime",
+      "notes": "Los archivos vienen etiquetados como S02, pero la serie solo tiene una temporada en TVmaze/TMDB."
+    },
+    {
+      "key": "the-ghost-in-the-shell-2026",
+      "title": "The Ghost in the Shell",
+      "year": 2026,
+      "tmdb_id": "255358",
+      "tvmaze_id": 90589,
+      "aliases": ["THE GHOST IN THE SHELL", "Koukaku Kidoutai"],
+      "search_titles": ["The Ghost in the Shell"],
+      "media_type": "anime"
+    },
+    {
+      "key": "insipid-prince",
+      "title": "The Insipid Prince's Furtive Grab for the Throne",
+      "year": 2026,
+      "tmdb_id": "284581",
+      "tvmaze_id": 92554,
+      "aliases": ["The Insipid Prince's Furtive Grab for The Throne"],
+      "search_titles": ["The Insipid Prince's Furtive Grab for the Throne"],
+      "media_type": "anime"
+    },
+    {
+      "key": "vox-machina",
+      "title": "The Legend of Vox Machina",
+      "year": 2022,
+      "tmdb_id": "135934",
+      "tvmaze_id": 44885,
+      "aliases": ["La leyenda de Vox Machina"],
+      "search_titles": ["The Legend of Vox Machina"],
+      "media_type": "western"
+    },
+    {
+      "key": "villager-level-999",
+      "title": "The Villager of Level 999",
+      "year": 2026,
+      "tmdb_id": "298994",
+      "tvmaze_id": 92316,
+      "aliases": ["Level 999 no Murabito", "999-level no Murabito"],
+      "search_titles": ["The Villager of Level 999"],
+      "media_type": "anime"
+    },
+    {
+      "key": "a-certain-magical-index",
+      "title": "A Certain Magical Index",
+      "year": 2008,
+      "tmdb_id": "30980",
+      "tvmaze_id": 4944,
+      "aliases": ["To Aru Majutsu no Index", "とある魔術の禁書目録"],
+      "search_titles": ["A Certain Magical Index"],
+      "media_type": "anime",
+      "notes": "Jellyfin no la tenía emparejada. TMDB 30980."
+    },
+    {
+      "key": "railgun",
+      "title": "A Certain Scientific Railgun",
+      "year": 2009,
+      "tmdb_id": "30977",
+      "tvmaze_id": 4945,
+      "aliases": ["Toaru Kagaku no Railgun", "とある科学の超電磁砲"],
+      "search_titles": ["A Certain Scientific Railgun"],
+      "media_type": "anime"
+    },
+    {
+      "key": "otome-game",
+      "title": "Trapped in a Dating Sim: The World of Otome Games Is Tough for Mobs",
+      "year": 2022,
+      "tmdb_id": "139512",
+      "tvmaze_id": 60825,
+      "aliases": ["Otome Game Sekai wa Mob ni Kibishii Sekai desu"],
+      "search_titles": ["Trapped in a Dating Sim: The World of Otome Games Is Tough for Mobs"],
+      "media_type": "anime"
+    },
+    {
+      "key": "cinderella-gray",
+      "title": "Uma Musume: Cinderella Gray",
+      "year": 2025,
+      "tmdb_id": "262700",
+      "tvmaze_id": 83739,
+      "aliases": ["Umamusume: Cinderella Gray"],
+      "search_titles": ["Uma Musume: Cinderella Gray"],
+      "media_type": "anime"
+    },
+    {
+      "key": "umamusume",
+      "title": "Uma Musume: Pretty Derby",
+      "year": 2018,
+      "tmdb_id": "77694",
+      "tvmaze_id": 35288,
+      "aliases": ["Umamusume: Pretty Derby", "Uma Musume Pretty Derby"],
+      "search_titles": ["Uma Musume: Pretty Derby"],
+      "media_type": "anime",
+      "notes": "La ficha anterior de Jellyfin apuntaba a Road to the Top (TMDB 223251); la correcta es 77694."
+    },
+    {
+      "key": "umayon",
+      "title": "Umayon",
+      "year": 2020,
+      "tmdb_id": "101668",
+      "tvmaze_id": 49097,
+      "aliases": ["うまよん"],
+      "search_titles": ["Umayon"],
+      "media_type": "anime"
+    },
+    {
+      "key": "vision-quest",
+      "title": "VisionQuest",
+      "year": 2026,
+      "tmdb_id": "213375",
+      "tvmaze_id": 64950,
+      "aliases": ["Vision Quest"],
+      "search_titles": ["VisionQuest"],
+      "media_type": "western"
+    },
+    {
+      "key": "my-happy-marriage",
+      "title": "My Happy Marriage",
+      "year": 2023,
+      "tmdb_id": "196944",
+      "tvmaze_id": 69124,
+      "aliases": ["Watashi no Shiawase na Kekkon", "わたしの幸せな結婚"],
+      "search_titles": ["My Happy Marriage", "Watashi no Shiawase na Kekkon"],
+      "media_type": "anime"
+    },
+    {
+      "key": "polar-opposites",
+      "title": "You and I Are Polar Opposites",
+      "year": 2026,
+      "tmdb_id": "278043",
+      "tvmaze_id": 89103,
+      "aliases": ["You and I Are Polar Opposites", "Seihantai na Kimi to Boku"],
+      "search_titles": ["You and I Are Polar Opposites"],
+      "media_type": "anime"
+    }
+  ]
+}

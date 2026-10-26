@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Trabajos{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Trabajos</h1>
+    <p>Historial de escaneos, sincronizaciones, planes y aplicaciones.</p>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/jobs/start/scan"><button class="btn" type="submit">Escanear</button></form>
+    <form method="post" action="/jobs/start/sync"><button class="btn" type="submit">Sincronizar</button></form>
+    <form method="post" action="/jobs/start/plan"><input type="hidden" name="mode" value="full"><button class="btn primary" type="submit">Generar plan</button></form>
+  </div>
+</div>
+
+{% if active_jobs %}
+  <section class="panel mb">
+    <div class="panel-head"><h2>En curso</h2></div>
+    <div class="stack">
+      {% for job in active_jobs %}
+        <div>
+          <div class="row between small">
+            <span><a href="/jobs/{{ job.id }}"><strong>{{ job.label }}</strong></a> · {{ job.message or '' }}</span>
+            <span class="muted">{{ job.progress }}%</span>
+          </div>
+          <div class="progress"><span style="width: {{ job.progress }}%"></span></div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-head"><h2>Historial</h2><span class="muted small">{{ jobs_list|length }} trabajos</span></div>
+  {% if jobs_list %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Trabajo</th><th>Tipo</th><th>Estado</th><th>Progreso</th><th>Mensaje</th><th>Creado</th><th>Terminado</th></tr></thead>
+        <tbody>
+        {% for job in jobs_list %}
+          <tr>
+            <td><a href="/jobs/{{ job.id }}"><strong>{{ job.label }}</strong></a><div class="tiny faint mono">{{ job.id }}</div></td>
+            <td class="mono tiny">{{ job.kind }}</td>
+            <td><span class="badge {{ {'done':'good','error':'bad','running':'accent','queued':'info'}.get(job.status,'') }}">{{ job.status|status_es }}</span></td>
+            <td class="num">{{ job.progress }}%</td>
+            <td class="small">{{ job.message or '—' }}</td>
+            <td class="muted small">{{ job.created_at|datetime_es }}</td>
+            <td class="muted small">{{ job.finished_at|datetime_es if job.finished_at else '—' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Aún no hay trabajos registrados.</div>
+  {% endif %}
+</section>
+{% endblock %}

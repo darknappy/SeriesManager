@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Planes{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Planes de reorganización</h1>
+    <p>Cada plan es una previsualización. Solo se aplica cuando lo confirmas explícitamente.</p>
+  </div>
+  <div class="btn-row">
+    <form method="post" action="/jobs/start/plan">
+      <input type="hidden" name="mode" value="full">
+      <button class="btn primary" type="submit">Generar plan nuevo</button>
+    </form>
+  </div>
+</div>
+
+{% if plans %}
+  <div class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Estado</th>
+            <th>Creado</th>
+            <th class="num">Acciones</th>
+            <th class="num">Movimientos</th>
+            <th class="num">Cuarentena</th>
+            <th class="num">Conflictos</th>
+            <th>Aplicado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for plan in plans %}
+          {% set s = plan.summary_data %}
+          <tr>
+            <td><a href="/plans/{{ plan.id }}"><strong>#{{ plan.id }}</strong></a> <span class="tiny muted">{{ plan.mode }}</span></td>
+            <td><span class="badge {{ {'ready':'good','applied':'good','partial':'warn','stale':'warn','building':'accent','applying':'accent','undone':'info'}.get(plan.status,'') }}">{{ plan.status|status_es }}</span></td>
+            <td class="muted small">{{ plan.created_at|datetime_es }}</td>
+            <td class="num">{{ plan.action_count }}</td>
+            <td class="num">{{ s.get('move', 0) }}</td>
+            <td class="num">{{ s.get('quarantine', 0) }}</td>
+            <td class="num">{{ s.get('conflict', 0) }}</td>
+            <td class="muted small">{{ plan.applied_at|datetime_es if plan.applied_at else '—' }}</td>
+            <td class="nowrap">
+              <a class="btn tiny" href="/plans/{{ plan.id }}">Revisar</a>
+              <a class="btn tiny" href="/plans/{{ plan.id }}/report" target="_blank">Informe</a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="panel"><div class="empty">Todavía no hay planes.<br><span class="small">Escanea, sincroniza y genera el primero.</span></div></div>
+{% endif %}
+{% endblock %}
