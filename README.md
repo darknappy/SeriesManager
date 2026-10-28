@@ -47,7 +47,10 @@ Estado verificado el 28 de octubre de 2026:
   planes **8 y 10** se marcaron como `stale` porque se generaron antes de corregir
   los prefijos. El **plan 11** se aplicó el 28 de octubre: **220 operaciones**
   (219 movimientos y 1 cuarentena), **0 errores** y **22,3 GB**. El informe está en
-  `data/reports/plan_11.html`. **No hay ningún plan listo pendiente.** El plan 9
+  `data/reports/plan_11.html`. El **plan 12** se aplicó después como reparación
+  puntual: **50 renombrados** (25 vídeos y 25 miniaturas de Ranma), **0 errores** y
+  **4,2 GB**, retirando el título genérico `Ranma 1 2 2024`; su informe está en
+  `data/reports/plan_12.html`. **No hay ningún plan listo pendiente.** El plan 9
   queda como registro histórico; no conviene deshacerlo después del plan 11.
 - La verificación de idempotencia sobre una copia temporal del catálogo no propone
   ningún movimiento de episodios ni miniaturas en Index/Railgun. Se retiraron 110
@@ -361,9 +364,11 @@ Estas reglas están codificadas en `data/series_seed.json` y `data/groups_seed.j
   existe una temporada; se corrigen a `Season 01`.
 - **Specials de Chobits:** 8.5, 18.5, 24.5 y OVA se renumeran en `Season 00`.
 - **Uma Musume:** OVA principal y especiales BNW se ordenan y renumeran en `Season 00`.
-- **Ranma:** la carpeta `Ranma` contiene `Ranma_1_2_2024_01..12` y las temporadas 2 y
-  3. Se detectan 25 vídeos en 3 temporadas sin huecos falsos. Tiene TMDB `259140`
-  manual y no tiene TVmaze/AniList; la estructura de temporadas sale de los archivos.
+- **Ranma:** la carpeta `Ranma (2024) [tmdbid-259140]` contiene 25 vídeos en 3
+  temporadas sin huecos falsos. Se retiró de los nombres el título genérico repetido
+  `Ranma 1 2 2024`; los archivos quedan como `Ranma (2024) - SxxExx.mp4` y sus
+  miniaturas. Tiene TMDB `259140` manual y no tiene TVmaze/AniList; la estructura de
+  temporadas sale de los archivos.
 
 ---
 
