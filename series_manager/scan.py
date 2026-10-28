@@ -331,6 +331,12 @@ def scan_library(
         for row in con.execute("SELECT id, path, status FROM files").fetchall():
             if row["path"] in seen_paths:
                 continue
+            # La cuarentena está fuera de las raíces escaneadas; sus archivos
+            # siguen existiendo y no deben convertirse en "missing".
+            if row["status"] == "quarantined" or is_subpath(
+                row["path"], cfg.quarantine_root
+            ):
+                continue
             if row["status"] != "missing":
                 con.execute(
                     "UPDATE files SET status='missing', updated_at=? WHERE id=?",

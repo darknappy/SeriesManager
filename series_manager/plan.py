@@ -442,6 +442,9 @@ def _schedule_move(
     target_key = _key(target)
     source_key = _key(source)
     if source_key == target_key:
+        # El archivo ya está en su destino canónico. Marcarlo como atendido
+        # evita que los bucles de duplicados lo envíen a cuarentena.
+        scheduled_sources.add(source_key)
         summary["keep"] += 1
         return
     if source_key in scheduled_sources:

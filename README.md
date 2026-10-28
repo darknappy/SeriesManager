@@ -17,10 +17,11 @@ Repositorio público: <https://github.com/darknappy/SeriesManager>
 
 Estado verificado el 28 de octubre de 2026:
 
-- **46 fichas** de serie y **50 grupos de carpeta** de origen.
-- **2.361 filas de archivo** en el catálogo, con **1.091 vídeos presentes**.
+- **46 fichas** de serie y **46 grupos de carpeta** de origen.
+- **2.369 filas de archivo** en el catálogo, con **1.091 vídeos** y **1.275 imágenes**
+  presentes (incluidas las miniaturas generadas por Jellyfin).
 - **1.091 vídeos interpretados**, **0 sin interpretar**, **0 desaparecidos** y
-  **0 grupos duplicados**.
+  **0 grupos duplicados**. Solo quedan **3 archivos en cuarentena**.
 - **InuYasha** sigue siendo una sola ficha: 7 temporadas, 193 episodios y TMDB
   `35610`.
 - Quedan **6 series con 11 huecos aislados**: Rooster Fighter S01E1-E3, You and I
@@ -34,14 +35,24 @@ Estado verificado el 28 de octubre de 2026:
   **To Aru Kagaku no Railgun S/T** y **Toaru Majutsu no Index III** ya están
   identificadas; las secuelas de Railgun e Index se asignaron a sus fichas y
   temporadas existentes.
+- **A Certain Magical Index** quedó con **76 episodios** (S00-S03) y
+  **A Certain Scientific Railgun** con **78** (S00-S03). El OVA nuevo de Railgun
+  ocupa `S00E01`; los especiales anteriores pasaron a `S00E02-E05`. Los **88
+  movimientos** de ambas series se aplicaron sin conflictos y **0 nombres**
+  conservan el prefijo duplicado.
 - Se corrigió la acumulación de prefijos del título de la serie en los nombres
   Jellyfin. La limpieza es **idempotente**: volver a planificar un nombre canónico no
   añade otra copia del prefijo.
 - El **plan 5** y el **plan 7** se aplicaron. El **plan 9** quedó `partial`; los
   planes **8 y 10** se marcaron como `stale` porque se generaron antes de corregir
-  los prefijos. El **plan 11** está listo con 219 movimientos y 1 cuarentena,
-  pendiente de revisión y aprobación explícita. **No se ha movido ningún archivo
-  durante esta reparación.**
+  los prefijos. El **plan 11** se aplicó el 28 de octubre: **220 operaciones**
+  (219 movimientos y 1 cuarentena), **0 errores** y **22,3 GB**. El informe está en
+  `data/reports/plan_11.html`. **No hay ningún plan listo pendiente.** El plan 9
+  queda como registro histórico; no conviene deshacerlo después del plan 11.
+- La verificación de idempotencia sobre una copia temporal del catálogo no propone
+  ningún movimiento de episodios ni miniaturas en Index/Railgun. Se retiraron 110
+  registros históricos de archivos que ya no existían; **no se borró ningún archivo
+  de la biblioteca**.
 
 La carpeta `D:\Series\En emision` es una zona de descargas en curso: **no forma parte
 del catálogo de series** y se usa para detectar qué títulos de la temporada ya están

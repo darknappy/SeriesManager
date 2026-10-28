@@ -17,6 +17,7 @@ from series_manager.catalog import (
 )
 from series_manager.config import Config
 from series_manager.db import get_or_create_series, init_db, session
+from series_manager.scan import scan_library
 from series_manager.seeds import ensure_group
 
 
@@ -223,6 +224,38 @@ class CatalogRepairTests(unittest.TestCase):
                 rows = list_unidentified(con, cfg)
                 self.assertEqual(len(rows), 1)
                 self.assertEqual(rows[0]["folder_name"], folder.name)
+
+    def test_scan_does_not_mark_quarantined_files_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cfg = make_config(root)
+            quarantine_file = cfg.quarantine_root / "plan-1" / "poster.jpg"
+            quarantine_file.parent.mkdir(parents=True, exist_ok=True)
+            quarantine_file.write_bytes(b"image")
+            with session(cfg.db_path) as con:
+                series_id = get_or_create_series(
+                    con,
+                    "demo-cuarentena",
+                    {"title": "Demo cuarentena", "match_status": "manual"},
+                )
+                con.execute(
+                    "INSERT INTO files(path, series_id, kind, status, updated_at) "
+                    "VALUES(?,?,?,?,?)",
+                    (
+                        str(quarantine_file),
+                        series_id,
+                        "image",
+                        "quarantined",
+                        "2026-01-01T00:00:00+00:00",
+                    ),
+                )
+            stats = scan_library(cfg, auto_match=False, fingerprint=False)
+            self.assertEqual(stats["missing"], 0)
+            with session(cfg.db_path) as con:
+                status = con.execute(
+                    "SELECT status FROM files WHERE path=?", (str(quarantine_file),)
+                ).fetchone()["status"]
+                self.assertEqual(status, "quarantined")
 
 
 if __name__ == "__main__":
