@@ -6,7 +6,12 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
-from .catalog import cleanup_staging_catalog, prune_stale_groups, reconcile_tmdb_folders
+from .catalog import (
+    cleanup_staging_catalog,
+    prune_orphan_provisional_series,
+    prune_stale_groups,
+    reconcile_tmdb_folders,
+)
 from .config import Config
 from .db import add_issue, clear_issues, session
 from .naming import (
@@ -86,6 +91,7 @@ def scan_library(
     progress: Callable[[int, str], None] | None = None,
     *,
     fingerprint: bool = True,
+    auto_match: bool = True,
 ) -> dict[str, Any]:
     cfg.ensure_dirs()
     stats: dict[str, Any] = {
@@ -100,6 +106,9 @@ def scan_library(
         "duplicates": 0,
         "merged_series": 0,
         "staging_cleaned": 0,
+        "orphan_series_cleaned": 0,
+        "matched": 0,
+        "review": 0,
     }
     seen_paths: set[str] = set()
 
@@ -199,6 +208,9 @@ def scan_library(
                         path.stem,
                         folder_season=group_season if parent_season is None else parent_season,
                         folder_special=parent_special or group_season == 0,
+                        series_title=series["title"],
+                        series_year=series["year"],
+                        series_folder=folder.name,
                     )
                     fingerprint_value = _reuse_fingerprint(existing, size, mtime)
                     if fingerprint and not fingerprint_value:
@@ -312,6 +324,7 @@ def scan_library(
         # Alias de carpetas renombradas que ya no existen. Se conservan si son
         # la única referencia de una ficha (por ejemplo, un disco desconectado).
         prune_stale_groups(con, cfg)
+        stats["orphan_series_cleaned"] = prune_orphan_provisional_series(con)
 
         # Archivos que ya no existen.
         report(88, "Revisando archivos eliminados")
@@ -375,6 +388,27 @@ def scan_library(
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             (now_iso(),),
         )
+
+    # Las carpetas nuevas sin semilla se intentan identificar solas. Solo se
+    # consultan las que aún no tienen candidatos guardados, para no repetir
+    # búsquedas ya revisadas en cada escaneo.
+    if auto_match:
+        report(96, "Identificando series nuevas")
+        try:
+            from .matching import refresh_all
+
+            def match_progress(pct: int, message: str) -> None:
+                report(96 + int(max(0, min(100, pct)) * 3 / 100), message)
+
+            match_stats = refresh_all(
+                cfg,
+                match_progress,
+                only_without_candidates=True,
+            )
+            stats["matched"] = int(match_stats.get("matched", 0))
+            stats["review"] = int(match_stats.get("review", 0))
+        except Exception as exc:  # una caída de red no debe romper el escaneo
+            stats["match_error"] = str(exc)
     report(100, "Escaneo terminado")
     return stats
 

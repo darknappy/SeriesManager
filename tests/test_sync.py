@@ -98,6 +98,58 @@ class SyncWithoutProviderTests(unittest.TestCase):
                     0,
                 )
 
+    def test_file_created_season_zero_episode_is_special(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cfg = make_config(root)
+            with session(cfg.db_path) as con:
+                series_id = get_or_create_series(
+                    con,
+                    "a-certain-magical-index",
+                    {
+                        "title": "A Certain Magical Index",
+                        "year": 2008,
+                        "match_status": "unmatched",
+                    },
+                )
+                path = (
+                    cfg.library_root
+                    / "A Certain Magical Index (2008) [tmdbid-30980]"
+                    / "Season 00"
+                    / "A Certain Magical Index (2008) - S00E02 - Toaru Majutsu no Index.mp4"
+                )
+                con.execute(
+                    "INSERT INTO files(path, rel_path, series_id, kind, status, season_number, "
+                    "episode_number, parsed_season, parsed_episode, parsed_special, parsed_from, "
+                    "title_hint, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        str(path),
+                        str(path.relative_to(cfg.library_root)),
+                        series_id,
+                        "video",
+                        "present",
+                        0,
+                        2,
+                        0,
+                        2,
+                        1,
+                        "SxxExx",
+                        "Toaru Majutsu no Index",
+                        "2026-01-01T00:00:00+00:00",
+                    ),
+                )
+            stats = sync_metadata(cfg)
+            self.assertEqual(stats["unassigned"], 0)
+            with session(cfg.db_path) as con:
+                episode = con.execute(
+                    "SELECT season_number, episode_number, is_special, source "
+                    "FROM episodes WHERE series_id=? AND season_number=0 AND episode_number=2",
+                    (series_id,),
+                ).fetchone()
+                self.assertIsNotNone(episode)
+                self.assertEqual(episode["is_special"], 1)
+                self.assertEqual(episode["source"], "file")
+
 
 if __name__ == "__main__":
     unittest.main()

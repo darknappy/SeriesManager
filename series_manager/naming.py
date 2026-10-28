@@ -20,6 +20,11 @@ CODEC_RE = re.compile(r"\b(x265|hevc|h\.?265|x264|avc|h\.?264|10bit|8bit)\b", re
 RELEASE_GROUP_PREFIX = re.compile(r"^\s*\[[^\]]{1,40}\]\s*")
 KNOWN_PREFIX = re.compile(r"^(?:YK|Sw-Anime|CR|Dw|Erai-raws|SubsPlease|HorribleSubs|MacroHEX)[-_ ]+", re.I)
 RESOLUTION_NUMBERS = {480, 576, 720, 1080, 2160, 1440}
+EPISODE_MARKER_RE = re.compile(
+    r"^\s*S(\d{1,3})\s*E(\d{1,4})(?:\s*[-–]\s*E?\d{1,4})?\s*[-–—:]\s*",
+    re.I,
+)
+SEPARATORS = " -–—:·|"
 
 
 @dataclass
@@ -186,7 +191,112 @@ def _quality_from_stem(stem: str) -> tuple[str, str]:
     return res, " ".join(parts)
 
 
-def _clean_title_hint(text: str) -> str:
+def _series_name_variants(
+    series_title: str | None,
+    series_year: int | None = None,
+    series_folder: str | None = None,
+) -> list[tuple[str, int | None]]:
+    """Devuelve (título, año) sin el tag de Jellyfin ni el año entre paréntesis."""
+    values: list[tuple[str, int | None]] = []
+    for raw in (series_title, series_folder):
+        if not raw:
+            continue
+        value = unicodedata.normalize("NFC", str(raw)).strip()
+        value = re.sub(r"\s*\[(?:tmdb|tvdb|imdb)id-[^\]]+\]\s*$", "", value, flags=re.I)
+        year = None
+        year_match = re.search(r"\s*\((\d{4})\)\s*$", value)
+        if year_match:
+            year = int(year_match.group(1))
+            value = value[: year_match.start()].strip()
+        value = value.strip(" -–—:")
+        if value:
+            values.append((value, series_year or year))
+    result: list[tuple[str, int | None]] = []
+    seen: set[str] = set()
+    for name, year in values:
+        key = name.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append((name, year))
+    return result
+
+
+def _strip_series_prefix(
+    text: str,
+    series_title: str | None = None,
+    series_year: int | None = None,
+    series_folder: str | None = None,
+) -> str:
+    """Quita prefijos de la ficha y marcas SxxExx repetidas.
+
+    Los nombres generados por Jellyfin incluyen el título de la serie antes de
+    ``S01E01``. Si ese nombre se vuelve a usar como título del episodio, el
+    siguiente plan añade el prefijo otra vez. Esta función corta todas las
+    repeticiones iniciales y deja solo el título real del episodio.
+    """
+    value = unicodedata.normalize("NFC", str(text or "")).strip()
+    if not value:
+        return ""
+    names = _series_name_variants(series_title, series_year, series_folder)
+    if not names:
+        return value
+
+    for _ in range(8):
+        before = value
+        marker = EPISODE_MARKER_RE.match(value)
+        if marker:
+            value = value[marker.end():]
+        for name, year in names:
+            year_part = (
+                rf"(?:\s*\(\s*{int(year)}\s*\))?"
+                if year
+                else r"(?:\s*\(\s*\d{4}\s*\))?"
+            )
+            pattern = re.compile(
+                rf"^\s*{re.escape(name)}{year_part}\s*(?:[-–—:·|]\s*|$)",
+                re.I,
+            )
+            match = pattern.match(value)
+            if match:
+                value = value[match.end():].lstrip(SEPARATORS + " ")
+                break
+        value = re.sub(rf"^[\s{re.escape(SEPARATORS)}]+", "", value)
+        value = re.sub(r"\s+", " ", value).strip(SEPARATORS + " ")
+        if value == before:
+            break
+    return value
+
+
+def clean_episode_title(
+    title: str | None,
+    series_title: str | None = None,
+    series_year: int | None = None,
+    series_folder: str | None = None,
+) -> str:
+    """Limpia un título de episodio sin tocar el título propio de la serie.
+
+    Es idempotente: si recibe un nombre ya canónico
+    ``Serie (2008) - S00E02 - Toaru Majutsu no Index`` devuelve
+    ``Toaru Majutsu no Index``, no una segunda copia del prefijo.
+    """
+    if not title:
+        return ""
+    value = unicodedata.normalize("NFC", str(title)).strip()
+    value = value.replace("_", " ")
+    value = re.sub(r"\s+", " ", value)
+    value = _strip_series_prefix(value, series_title, series_year, series_folder)
+    value = re.sub(rf"^[\s{re.escape(SEPARATORS)}]+", "", value)
+    value = re.sub(rf"[\s{re.escape(SEPARATORS)}]+$", "", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _clean_title_hint(
+    text: str,
+    series_title: str | None = None,
+    series_year: int | None = None,
+    series_folder: str | None = None,
+) -> str:
     value = text
     value = RELEASE_GROUP_PREFIX.sub("", value)
     value = KNOWN_PREFIX.sub("", value)
@@ -196,8 +306,9 @@ def _clean_title_hint(text: str) -> str:
     value = CODEC_RE.sub(" ", value)
     value = re.sub(r"\b(?:BD|DVD|WEB|HDTV|10bit|8bit|AAC|FLAC|DDP?|x264|x265|HEVC)\b", " ", value, flags=re.I)
     value = value.replace("_", " ").replace(".", " ")
-    value = re.sub(r"^[\s\-–—:]+|[\s\-–—:]+$", "", value)
-    value = re.sub(r"\s+", " ", value).strip(" -–—")
+    value = _strip_series_prefix(value, series_title, series_year, series_folder)
+    value = re.sub(rf"^[\s{re.escape(SEPARATORS)}]+|[\s{re.escape(SEPARATORS)}]+$", "", value)
+    value = re.sub(r"\s+", " ", value).strip(SEPARATORS + " ")
     if len(value) < 3:
         return ""
     if re.fullmatch(r"[\d\s.\-]+", value):
@@ -209,6 +320,10 @@ def parse_episode(
     stem: str,
     folder_season: int | None = None,
     folder_special: bool = False,
+    *,
+    series_title: str | None = None,
+    series_year: int | None = None,
+    series_folder: str | None = None,
 ) -> ParsedEpisode | None:
     """Extrae temporada/episodio del nombre de archivo.
 
@@ -407,7 +522,9 @@ def parse_episode(
         start = work.lower().find(matched_text.lower())
         if start >= 0:
             remainder = work[:start] + " " + work[start + len(matched_text):]
-            title_hint = _clean_title_hint(remainder)
+            title_hint = _clean_title_hint(
+                remainder, series_title, series_year, series_folder
+            )
 
     return ParsedEpisode(
         season=int(season),
@@ -466,6 +583,9 @@ def build_episode_filename(
     include_title: bool = True,
     include_quality: bool = False,
     title_max_len: int = 90,
+    *,
+    series_title: str | None = None,
+    series_year: int | None = None,
 ) -> str:
     season_int = int(season)
     ep_text = format_number(episode)
@@ -473,7 +593,16 @@ def build_episode_filename(
     if episode_end:
         base += f"-E{format_number(episode_end)}"
     if include_title and title:
-        clean_title = sanitize_component(title, title_max_len)
+        # Si el título ya trae el prefijo de la serie (por ejemplo, porque se
+        # releyó un nombre generado antes), se elimina antes de volver a
+        # añadirlo. Así el nombre es idempotente y no acumula prefijos.
+        clean_title = clean_episode_title(
+            title,
+            series_title=series_title,
+            series_year=series_year,
+            series_folder=series_folder,
+        )
+        clean_title = sanitize_component(clean_title, title_max_len)
         if clean_title:
             base += f" - {clean_title}"
     if include_quality and quality:
@@ -517,6 +646,8 @@ def target_paths(
         include_title,
         include_quality,
         title_max_len,
+        series_title=series_title,
+        series_year=year,
     )
     return series_dir, season_dir, season_dir / filename
 

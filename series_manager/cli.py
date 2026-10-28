@@ -169,6 +169,9 @@ def cmd_scan(cfg: Config, sin_huellas: bool, as_json: bool) -> None:
         "duplicates": "Grupos duplicados",
         "merged_series": "Fichas duplicadas fusionadas",
         "staging_cleaned": "Fichas de descargas retiradas",
+        "orphan_series_cleaned": "Fichas provisionales vacías retiradas",
+        "matched": "Series nuevas identificadas",
+        "review": "Series nuevas para revisar",
     }
     for key, label in labels.items():
         table.add_row(label, str(result.get(key, 0)))
@@ -188,6 +191,7 @@ def cmd_sync(cfg: Config, forzar: bool, as_json: bool) -> None:
         return
     table = _table("Sincronización", [("Métrica", {"style": "cyan"}), ("Valor", {"justify": "right"})])
     table.add_row("Series sincronizadas", str(result.get("synced", 0)))
+    table.add_row("Emparejadas automáticamente", str(result.get("auto_matched", 0)))
     table.add_row("Sin proveedor", str(result.get("without_provider", 0)))
     table.add_row("Episodios", str(result.get("episodes", 0)))
     table.add_row("Archivos asignados", str(result.get("assigned", 0)))

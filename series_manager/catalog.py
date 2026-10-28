@@ -252,6 +252,30 @@ def prune_stale_groups(con, cfg: Config) -> int:
     return removed
 
 
+def prune_orphan_provisional_series(con) -> int:
+    """Elimina fichas provisionales que quedaron sin carpetas ni archivos.
+
+    Al añadir una semilla para una carpeta que antes era provisional, el
+    escaneo reasigna sus archivos a la ficha canónica. La ficha provisional
+    queda vacía y no debe seguir apareciendo en el panel.
+    """
+    rows = con.execute(
+        "SELECT s.id FROM series s "
+        "WHERE s.match_status='unmatched' AND s.provider IS NULL "
+        "AND s.tmdb_id IS NULL AND s.tvmaze_id IS NULL AND s.anilist_id IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM source_groups g WHERE g.series_key=s.series_key) "
+        "AND NOT EXISTS (SELECT 1 FROM files f WHERE f.series_id=s.id) "
+        "AND NOT EXISTS (SELECT 1 FROM episodes e WHERE e.series_id=s.id) "
+        "AND NOT EXISTS (SELECT 1 FROM seasons st WHERE st.series_id=s.id)"
+    ).fetchall()
+    for row in rows:
+        series_id = int(row["id"])
+        con.execute("DELETE FROM match_candidates WHERE series_id=?", (series_id,))
+        con.execute("DELETE FROM issues WHERE series_id=?", (series_id,))
+        con.execute("DELETE FROM series WHERE id=?", (series_id,))
+    return len(rows)
+
+
 def cleanup_staging_catalog(con, cfg: Config) -> dict[str, int]:
     """Retira del catálogo las fichas falsas creadas por carpetas de descargas.
 

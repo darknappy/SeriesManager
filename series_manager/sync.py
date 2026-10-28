@@ -277,6 +277,7 @@ def _assign_files(con, series, episodes: list[dict[str, Any]], absolute_map: dic
 
         season = int(season)
         number = float(number)
+        is_special = 1 if (season == 0 or file["parsed_special"]) else 0
         if (
             provider_keys
             and season != 0
@@ -303,8 +304,13 @@ def _assign_files(con, series, episodes: list[dict[str, Any]], absolute_map: dic
             episode_id = int(base_episode["id"])
             con.execute(
                 "UPDATE episodes SET season_id=?, status='present', source=COALESCE(source,'file'), "
-                "updated_at=? WHERE id=?",
-                (_season_id(con, int(series["id"]), season), now_iso(), episode_id),
+                "is_special=?, updated_at=? WHERE id=?",
+                (
+                    _season_id(con, int(series["id"]), season),
+                    is_special,
+                    now_iso(),
+                    episode_id,
+                ),
             )
         else:
             episode_id = upsert_episode(
@@ -316,6 +322,7 @@ def _assign_files(con, series, episodes: list[dict[str, Any]], absolute_map: dic
                 season_id=_season_id(con, int(series["id"]), season),
                 status="present",
                 source="file",
+                is_special=is_special,
                 absolute_number=float(absolute) if absolute else None,
             )
         con.execute(
@@ -423,6 +430,7 @@ def sync_metadata(
     progress: Callable[[int, str], None] | None = None,
     *,
     force: bool = False,
+    auto_match: bool = False,
 ) -> dict[str, Any]:
     cfg.ensure_dirs()
     seeds = load_series_seeds(cfg)
@@ -435,9 +443,20 @@ def sync_metadata(
         "assigned": 0,
         "unassigned": 0,
         "missing": 0,
+        "auto_matched": 0,
+        "auto_review": 0,
         "errors": [],
     }
     horizon = int(cfg.get("airing_horizon_days", 45))
+    if auto_match:
+        try:
+            from .matching import refresh_all
+
+            match_stats = refresh_all(cfg, only_without_candidates=True)
+            stats["auto_matched"] = int(match_stats.get("matched", 0))
+            stats["auto_review"] = int(match_stats.get("review", 0))
+        except Exception as exc:
+            stats["errors"].append(f"Emparejamiento automático: {exc}")
 
     with session(cfg.db_path) as con:
         for code in (

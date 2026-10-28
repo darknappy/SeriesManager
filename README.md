@@ -15,24 +15,33 @@ Repositorio público: <https://github.com/darknappy/SeriesManager>
 
 ## Estado de esta instalación
 
-Estado verificado el 26 de octubre de 2026:
+Estado verificado el 28 de octubre de 2026:
 
-- **44 fichas** de serie y **44 grupos de carpeta** de origen.
-- **2.248 filas de archivo** en el catálogo, con **984 vídeos presentes**.
-- **984 vídeos interpretados**, **0 sin interpretar**, **0 desaparecidos** y
+- **46 fichas** de serie y **50 grupos de carpeta** de origen.
+- **2.361 filas de archivo** en el catálogo, con **1.091 vídeos presentes**.
+- **1.091 vídeos interpretados**, **0 sin interpretar**, **0 desaparecidos** y
   **0 grupos duplicados**.
 - **InuYasha** sigue siendo una sola ficha: 7 temporadas, 193 episodios y TMDB
   `35610`.
-- Solo quedan **5 incidencias reales de huecos aislados**: Lanterns S01E8, Rooster
-  Fighter S01E1-E3, Trapped in a Dating Sim S02E11, Uma Musume S01E13 y You and I
-  Are Polar Opposites S02E1/E2/E13.
+- Quedan **6 series con 11 huecos aislados**: Rooster Fighter S01E1-E3, You and I
+  Are Polar Opposites S02E1/E2/E13, VisionQuest S01 (2), Accelerator S01E7,
+  Trapped in a Dating Sim S02E11 y Uma Musume S01E13.
 - Quedan **4 fichas sin TVmaze**: los tres OVA de Macross con TMDB manual y
   `Ranma`, identificada manualmente con TMDB `259140`. Ranma se detecta por archivos
   (3 temporadas y 25 vídeos) y **no genera huecos falsos**.
 - **0 carpetas pendientes de identificar** y **0 series por revisar**.
-- El **plan 5** ya se aplicó y su diario permite deshacerlo. Los planes 1-4 y 6 están
-  marcados como `stale`. **No hay ningún plan listo pendiente** y no se generará ni
-  aplicará otro sin revisión y aprobación explícita.
+- Las carpetas nuevas **The Ramparts of Ice**, **A Certain Scientific Accelerator**,
+  **To Aru Kagaku no Railgun S/T** y **Toaru Majutsu no Index III** ya están
+  identificadas; las secuelas de Railgun e Index se asignaron a sus fichas y
+  temporadas existentes.
+- Se corrigió la acumulación de prefijos del título de la serie en los nombres
+  Jellyfin. La limpieza es **idempotente**: volver a planificar un nombre canónico no
+  añade otra copia del prefijo.
+- El **plan 5** y el **plan 7** se aplicaron. El **plan 9** quedó `partial`; los
+  planes **8 y 10** se marcaron como `stale` porque se generaron antes de corregir
+  los prefijos. El **plan 11** está listo con 219 movimientos y 1 cuarentena,
+  pendiente de revisión y aprobación explícita. **No se ha movido ningún archivo
+  durante esta reparación.**
 
 La carpeta `D:\Series\En emision` es una zona de descargas en curso: **no forma parte
 del catálogo de series** y se usa para detectar qué títulos de la temporada ya están
@@ -48,9 +57,15 @@ descargados.
 - Metadatos y episodios desde **TVmaze**; catálogo de temporada y próximos estrenos
   desde **AniList**. Sin claves de TMDB.
 - Emparejamiento con candidatos de TVmaze/AniList y edición manual de IDs.
+- **Identificación automática de carpetas nuevas**: el escaneo busca candidatos para
+  las fichas sin proveedor y sin búsquedas previas; `sync` reintenta las que aún no
+  tengan candidatos. Usa títulos en inglés, romaji, nativos y sinónimos de AniList.
+- **Nombres Jellyfin idempotentes**: se eliminan los prefijos repetidos de la serie y
+  las marcas `SxxExx` embebidas antes de construir el nombre final.
 - **Identificadores manuales** para carpetas cuyo nombre fue modificado.
 - **Alias de carpeta** para vincular una carpeta renombrada a una ficha existente.
-- Mapeo automático de carpetas con `[tmdbid-<id>]`.
+- Mapeo automático de carpetas con `[tmdbid-<id>]` y semillas para secuelas conocidas
+  (`Index III`, `Railgun S/T`, `Accelerator`, `The Ramparts of Ice`).
 - Detección de **carpetas sin identificar** con acceso directo al formulario de alta.
 - **Descargas en curso**: carpetas de staging que no se escanean como series y se usan
   para marcar qué animes de la temporada ya tienes.
@@ -126,7 +141,8 @@ O todo en uno:
 python -m series_manager rebuild
 ```
 
-`rebuild` hace escaneo + sincronización + plan. Sigue sin modificar archivos.
+`rebuild` hace escaneo + identificación automática + sincronización + plan. Sigue sin
+modificar archivos.
 
 ---
 
@@ -135,8 +151,8 @@ python -m series_manager rebuild
 | Comando | Qué hace |
 | --- | --- |
 | `init` | Crea carpetas, base de datos y carga las semillas. |
-| `scan` | Escanea la biblioteca y clasifica archivos. Usa `--sin-huellas` para ir más rápido. |
-| `sync` | Sincroniza series, temporadas y episodios con TVmaze. `--forzar` ignora la caché. |
+| `scan` | Escanea la biblioteca, clasifica archivos e intenta identificar carpetas nuevas. Usa `--sin-huellas` para ir más rápido. |
+| `sync` | Sincroniza series, temporadas y episodios con TVmaze; reintenta emparejar las fichas nuevas. `--forzar` ignora la caché. |
 | `match` | Busca candidatos para series sin proveedor. |
 | `unidentified` | Lista carpetas que aún no tienen una ficha identificada. |
 | `identify <carpeta> --titulo ... [--tmdb ...] [--tvmaze ...] [--anilist ...]` | Crea una ficha manual para una carpeta renombrada. |
@@ -144,7 +160,7 @@ python -m series_manager rebuild
 | `downloads` | Lista los vídeos detectados en las carpetas de descargas en curso. |
 | `airing --descubrir [--temporada fall] [--ano 2026] [--limite N]` | Muestra la cartelera AniList con estado de biblioteca, descarga y seguimiento. |
 | `watch add-bulk <id> <id> …` | Añade varios animes de AniList al seguimiento. |
-| `rebuild` | Escaneo + sincronización + plan. |
+| `rebuild` | Escaneo + identificación automática + sincronización + plan. |
 | `plan` | Genera el plan en seco y el informe HTML. `--abrir` abre el informe. |
 | `apply <id>` | Aplica un plan. Pide confirmación; `--si` la omite. |
 | `undo <id>` | Deshace un plan aplicado usando el diario. |

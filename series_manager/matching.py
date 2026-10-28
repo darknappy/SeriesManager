@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from .config import Config
@@ -9,6 +10,23 @@ from .db import add_issue, session
 from .providers.anilist import AniListClient
 from .providers.tvmaze import TVmazeClient, title_score
 from .utils import json_dumps, json_loads, now_iso
+
+
+def _query_variants(query: str) -> list[str]:
+    """Variantes conservadoras para transliteraciones habituales de anime."""
+    values: list[str] = []
+
+    def add(value: str) -> None:
+        value = re.sub(r"\s+", " ", value).strip()
+        if value and value not in values:
+            values.append(value)
+
+    add(query)
+    # AniList usa "Toaru" y no "To Aru" en muchas fichas.
+    add(re.sub(r"\bTo\s+Aru\b", "Toaru", query, flags=re.I))
+    # TVmaze a veces omite el artículo inicial.
+    add(re.sub(r"^The\s+", "", query, flags=re.I))
+    return values
 
 
 def _queries_for(series) -> list[str]:
@@ -20,13 +38,6 @@ def _queries_for(series) -> list[str]:
     for value in aliases:
         if isinstance(value, str) and value and value not in result:
             result.append(value)
-    search_path = None
-    try:
-        from .seeds import load_series_seeds
-
-        # Se cargan una vez por proceso mediante el catálogo de semillas.
-    except Exception:
-        pass
     return result[:4]
 
 
@@ -42,7 +53,75 @@ def _seed_queries(cfg: Config, series) -> list[str]:
                     queries.append(value)
     except Exception:
         pass
-    return queries[:5]
+    expanded: list[str] = []
+    for query in queries:
+        for variant in _query_variants(query):
+            if variant not in expanded:
+                expanded.append(variant)
+    return expanded[:10]
+
+
+def _candidate_titles(item: dict[str, Any]) -> list[str]:
+    values = [
+        item.get("title"),
+        item.get("english"),
+        item.get("romaji"),
+        item.get("native"),
+        *(item.get("synonyms") or []),
+    ]
+    return [
+        str(value).strip()
+        for value in values
+        if isinstance(value, str) and value.strip()
+    ]
+
+
+def _candidate_score(query: str, item: dict[str, Any], series_year: int | None) -> float:
+    candidate_year = item.get("year")
+    scores = [
+        title_score(query, value, series_year, candidate_year)
+        for value in _candidate_titles(item)
+    ]
+    return max(scores, default=0.0)
+
+
+def _format_rank(item: dict[str, Any]) -> int:
+    """Prefiere series regulares frente a especiales/OVA para una carpeta."""
+    fmt = str(item.get("format") or "").upper()
+    if fmt in {"TV", "TV_SHORT"}:
+        return 3
+    if fmt in {"ONA", "OVA"}:
+        return 1
+    if fmt == "SPECIAL":
+        return 0
+    return 2
+
+
+def _pick_best(candidates: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if not candidates:
+        return None
+    ordered = sorted(
+        candidates,
+        key=lambda c: (
+            float(c.get("score") or 0.0),
+            _format_rank(c),
+            c.get("provider") == "tvmaze",
+        ),
+        reverse=True,
+    )
+    best = ordered[0]
+    # TVmaze da episodios; si está casi empatado, se prefiere.
+    tvmaze_best = next(
+        (item for item in ordered if item.get("provider") == "tvmaze"),
+        None,
+    )
+    if (
+        tvmaze_best
+        and best.get("provider") != "tvmaze"
+        and float(best.get("score") or 0.0) - float(tvmaze_best.get("score") or 0.0) < 0.06
+    ):
+        best = tvmaze_best
+    return best
 
 
 def search_candidates(cfg: Config, series, limit: int = 8) -> list[dict[str, Any]]:
@@ -54,7 +133,7 @@ def search_candidates(cfg: Config, series, limit: int = 8) -> list[dict[str, Any
         try:
             for item in tvmaze.search(query, limit=limit):
                 score = max(
-                    title_score(query, item["title"], series["year"], item["year"]),
+                    _candidate_score(query, item, series["year"]),
                     item.get("score", 0.0) * 0.35,
                 )
                 key = ("tvmaze", item["provider_id"])
@@ -67,7 +146,7 @@ def search_candidates(cfg: Config, series, limit: int = 8) -> list[dict[str, Any
             continue
         try:
             for item in anilist.search(query, limit=limit):
-                score = title_score(query, item["title"], series["year"])
+                score = _candidate_score(query, item, series["year"])
                 key = ("anilist", item["provider_id"])
                 current = results.get(key)
                 if not current or score > current["score"]:
@@ -79,7 +158,11 @@ def search_candidates(cfg: Config, series, limit: int = 8) -> list[dict[str, Any
             continue
     ordered = sorted(
         results.values(),
-        key=lambda c: (c.get("score", 0.0), c.get("provider") == "tvmaze"),
+        key=lambda c: (
+            c.get("score", 0.0),
+            _format_rank(c),
+            c.get("provider") == "tvmaze",
+        ),
         reverse=True,
     )
     return ordered[: max(limit, 10)]
@@ -125,6 +208,26 @@ def apply_candidate(con, series, candidate: dict[str, Any], status: str = "manua
         values["anilist_id"] = int(provider_id) if provider_id.isdigit() else None
         values["provider"] = "anilist"
         values["provider_id"] = provider_id
+        if not series["original_title"] and candidate.get("romaji"):
+            values["original_title"] = candidate["romaji"]
+        aliases = json_loads(series["aliases"], []) or []
+        if not isinstance(aliases, list):
+            aliases = []
+        for value in [
+            candidate.get("english"),
+            candidate.get("romaji"),
+            candidate.get("native"),
+            *(candidate.get("synonyms") or []),
+        ]:
+            if (
+                isinstance(value, str)
+                and value.strip()
+                and value.strip() != series["title"]
+                and value.strip() not in aliases
+            ):
+                aliases.append(value.strip())
+        if aliases:
+            values["aliases"] = json_dumps(aliases)
     assignments = ", ".join(f"{k}=?" for k in values)
     con.execute(f"UPDATE series SET {assignments} WHERE id=?", (*values.values(), series_id))
     con.execute(
@@ -137,28 +240,41 @@ def auto_match(cfg: Config, series, candidates: list[dict[str, Any]] | None = No
     """Devuelve True si encontró un emparejamiento aceptable."""
     threshold = float(cfg.get("auto_match_threshold", 0.80))
     candidates = candidates if candidates is not None else search_candidates(cfg, series)
-    if not candidates:
-        return False
-    best = candidates[0]
-    # Prioriza TVmaze si está casi empatado con AniList, porque da episodios.
-    tvmaze_best = next((c for c in candidates if c.get("provider") == "tvmaze"), None)
-    if tvmaze_best and best.get("provider") != "tvmaze":
-        if best.get("score", 0) - tvmaze_best.get("score", 0) < 0.06:
-            best = tvmaze_best
-    if best.get("score", 0.0) < threshold:
+    best = _pick_best(candidates)
+    if not best or float(best.get("score") or 0.0) < threshold:
         return False
     with session(cfg.db_path) as con:
         apply_candidate(con, series, best, status="auto")
     return True
 
 
-def refresh_all(cfg: Config, progress=None) -> dict[str, int]:
+def refresh_all(
+    cfg: Config,
+    progress=None,
+    *,
+    only_without_candidates: bool = False,
+) -> dict[str, int]:
+    """Busca proveedor para las fichas sin TVmaze.
+
+    Con ``only_without_candidates`` solo consulta las que nunca se han
+    buscado. Así el escaneo puede intentar identificar carpetas nuevas sin
+    repetir cada vez las búsquedas que ya quedaron pendientes de revisión.
+    """
     stats = {"series": 0, "matched": 0, "review": 0, "candidates": 0}
     with session(cfg.db_path) as con:
-        rows = con.execute(
-            "SELECT * FROM series WHERE tvmaze_id IS NULL AND match_status IN ('unmatched','seeded') "
-            "ORDER BY title"
-        ).fetchall()
+        sql = (
+            "SELECT * FROM series WHERE tvmaze_id IS NULL "
+            "AND match_status IN ('unmatched','seeded') "
+            "AND (EXISTS (SELECT 1 FROM source_groups g WHERE g.series_key=series.series_key) "
+            "OR EXISTS (SELECT 1 FROM files f WHERE f.series_id=series.id))"
+        )
+        if only_without_candidates:
+            sql += (
+                " AND NOT EXISTS (SELECT 1 FROM match_candidates mc "
+                "WHERE mc.series_id=series.id)"
+            )
+        sql += " ORDER BY title"
+        rows = con.execute(sql).fetchall()
         total = max(1, len(rows))
         for index, series in enumerate(rows, start=1):
             if progress:
@@ -167,10 +283,11 @@ def refresh_all(cfg: Config, progress=None) -> dict[str, int]:
             store_candidates(con, int(series["id"]), candidates)
             stats["candidates"] += len(candidates)
             stats["series"] += 1
-            if candidates and candidates[0].get("score", 0) >= float(
+            best = _pick_best(candidates)
+            if best and float(best.get("score") or 0.0) >= float(
                 cfg.get("auto_match_threshold", 0.80)
             ):
-                apply_candidate(con, series, candidates[0], status="auto")
+                apply_candidate(con, series, best, status="auto")
                 stats["matched"] += 1
             else:
                 stats["review"] += 1

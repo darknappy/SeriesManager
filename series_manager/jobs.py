@@ -110,11 +110,21 @@ def _perform(cfg: Config, kind: str, params: dict[str, Any], progress: Callable[
     if kind == "scan":
         from .scan import scan_library
 
-        return scan_library(cfg, progress, fingerprint=bool(params.get("fingerprint", True)))
+        return scan_library(
+            cfg,
+            progress,
+            fingerprint=bool(params.get("fingerprint", True)),
+            auto_match=bool(params.get("auto_match", True)),
+        )
     if kind == "sync":
         from .sync import sync_metadata
 
-        return sync_metadata(cfg, progress, force=bool(params.get("force", False)))
+        return sync_metadata(
+            cfg,
+            progress,
+            force=bool(params.get("force", False)),
+            auto_match=bool(params.get("auto_match", True)),
+        )
     if kind == "match":
         from .matching import refresh_all
 

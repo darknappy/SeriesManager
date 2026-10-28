@@ -9,7 +9,13 @@ from typing import Any, Callable
 
 from .config import Config
 from .db import session
-from .naming import IMAGE_EXTS, folder_name_for_series, season_folder_name, target_paths
+from .naming import (
+    IMAGE_EXTS,
+    clean_episode_title,
+    folder_name_for_series,
+    season_folder_name,
+    target_paths,
+)
 from .utils import (
     human_size,
     is_subpath,
@@ -81,15 +87,28 @@ def _unique_target(target: Path) -> Path:
     return target
 
 
-def _episode_title(episode, file_row, config: Config) -> str:
-    title = (episode["title"] if episode else "") or ""
+def _episode_title(episode, file_row, config: Config, series=None) -> str:
+    series_title = series["title"] if series else None
+    series_year = series["year"] if series else None
+    title = clean_episode_title(
+        (episode["title"] if episode else "") or "",
+        series_title,
+        series_year,
+    )
     if title:
         return title
-    if episode and int(episode["is_special"] or 0):
-        return f"Special {int(episode['episode_number']):02d}"
-    hint = (file_row["title_hint"] or "").strip()
-    if hint and len(hint) >= 3:
+    hint = clean_episode_title(
+        (file_row["title_hint"] or "").strip(),
+        series_title,
+        series_year,
+    )
+    if len(hint) >= 3:
         return hint
+    if episode and (
+        int(episode["is_special"] or 0)
+        or int(episode["season_number"] or 0) == 0
+    ):
+        return f"Special {int(episode['episode_number']):02d}"
     return ""
 
 
@@ -258,7 +277,7 @@ def build_plan(
                 )
                 if end and end < number:
                     end = 0
-                title = _episode_title(episode, primary, cfg)
+                title = _episode_title(episode, primary, cfg, series)
                 series_dir2, season_dir, target = _target_for_episode(
                     cfg, series, root, season, number, end, title, primary
                 )

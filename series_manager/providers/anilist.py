@@ -13,6 +13,7 @@ API = "https://graphql.anilist.co"
 MEDIA_FIELDS = """
 id
 title { romaji english native }
+synonyms
 description(asHtml: false)
 coverImage { extraLarge large color }
 bannerImage
@@ -151,7 +152,7 @@ class AniListClient:
         results = [normalize_media(item) for item in media]
         results.sort(
             key=lambda m: (
-                title_score(title, m["title"], m.get("year")),
+                media_title_score(title, m),
                 m.get("popularity") or 0,
             ),
             reverse=True,
@@ -214,6 +215,11 @@ def normalize_media(raw: dict[str, Any]) -> dict[str, Any]:
         "english": english,
         "romaji": romaji,
         "native": (title.get("native") or "").strip(),
+        "synonyms": [
+            str(value).strip()
+            for value in (raw.get("synonyms") or [])
+            if str(value).strip()
+        ],
         "year": int(year) if year else None,
         "season": raw.get("season") or "",
         "season_year": raw.get("seasonYear"),
@@ -235,6 +241,23 @@ def normalize_media(raw: dict[str, Any]) -> dict[str, Any]:
         "start_date": start,
         "end_date": end,
     }
+
+
+def media_title_score(query: str, media: dict[str, Any]) -> float:
+    """Puntúa una ficha usando todos sus títulos conocidos (incluidos synonyms)."""
+    values = [
+        media.get("title"),
+        media.get("english"),
+        media.get("romaji"),
+        media.get("native"),
+        *(media.get("synonyms") or []),
+    ]
+    scores = [
+        title_score(query, str(value))
+        for value in values
+        if isinstance(value, str) and value.strip()
+    ]
+    return max(scores, default=0.0)
 
 
 def title_score(query: str, candidate: str, year: int | None = None) -> float:

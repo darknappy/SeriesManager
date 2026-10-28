@@ -23,6 +23,7 @@ __pycache__/
 # Bases de datos y datos de ejecución
 data/*.db
 data/*.db-*
+data/*.db.bak-*
 data/*.sqlite
 data/*.sqlite3
 data/backups/

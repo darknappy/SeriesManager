@@ -7,12 +7,14 @@ from pathlib import Path
 
 from series_manager.naming import (
     build_episode_filename,
+    clean_episode_title,
     folder_name_for_series,
     parse_episode,
     parse_folder_info,
     parse_path_season,
     target_paths,
 )
+from series_manager.plan import _episode_title
 from series_manager.utils import sanitize_component
 
 
@@ -108,6 +110,88 @@ class ParserTests(unittest.TestCase):
         season, special = parse_path_season(["Serie", "Season 03", "archivo.mkv"])
         self.assertEqual(season, 3)
         self.assertFalse(special)
+
+    def test_repeated_series_prefix_is_removed_from_hint(self) -> None:
+        stem = (
+            "A Certain Magical Index (2008) - S00E02 - "
+            "A Certain Magical Index - - A Certain Magical Index - - Toaru Majutsu no Index"
+        )
+        parsed = parse_episode(
+            stem,
+            series_title="A Certain Magical Index",
+            series_year=2008,
+        )
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.season, 0)
+        self.assertEqual(parsed.episode, 2)
+        self.assertEqual(parsed.title_hint, "Toaru Majutsu no Index")
+
+    def test_canonical_filename_is_idempotent(self) -> None:
+        series = "A Certain Magical Index"
+        dirty = (
+            "A Certain Magical Index - - A Certain Magical Index - - "
+            "Toaru Majutsu no Index"
+        )
+        first = build_episode_filename(
+            "A Certain Magical Index (2008)",
+            0,
+            2,
+            None,
+            dirty,
+            ".mp4",
+            series_title=series,
+            series_year=2008,
+        )
+        self.assertEqual(
+            first,
+            "A Certain Magical Index (2008) - S00E02 - Toaru Majutsu no Index.mp4",
+        )
+        parsed = parse_episode(
+            Path(first).stem,
+            series_title=series,
+            series_year=2008,
+        )
+        self.assertIsNotNone(parsed)
+        second = build_episode_filename(
+            "A Certain Magical Index (2008)",
+            0,
+            2,
+            None,
+            parsed.title_hint,
+            ".mp4",
+            series_title=series,
+            series_year=2008,
+        )
+        self.assertEqual(second, first)
+
+    def test_clean_episode_title_ignores_full_canonical_name(self) -> None:
+        self.assertEqual(
+            clean_episode_title(
+                "A Certain Magical Index (2008) - S00E02 - Toaru Majutsu no Index",
+                "A Certain Magical Index",
+                2008,
+            ),
+            "Toaru Majutsu no Index",
+        )
+
+    def test_plan_uses_cleaned_hint_for_file_special(self) -> None:
+        title = _episode_title(
+            {
+                "title": None,
+                "is_special": 0,
+                "episode_number": 2.0,
+                "season_number": 0,
+            },
+            {
+                "title_hint": (
+                    "A Certain Magical Index - - A Certain Magical Index - - "
+                    "Toaru Majutsu no Index"
+                )
+            },
+            None,
+            {"title": "A Certain Magical Index", "year": 2008},
+        )
+        self.assertEqual(title, "Toaru Majutsu no Index")
 
 
 class TargetNameTests(unittest.TestCase):

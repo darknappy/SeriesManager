@@ -353,13 +353,23 @@
       "media_type": "anime"
     },
     {
+      "key": "the-ramparts-of-ice",
+      "title": "The Ramparts of Ice",
+      "year": 2026,
+      "tvmaze_id": 90251,
+      "anilist_id": 186497,
+      "aliases": ["Koori no Jouheki", "氷の城壁"],
+      "search_titles": ["The Ramparts of Ice", "Koori no Jouheki"],
+      "media_type": "anime"
+    },
+    {
       "key": "a-certain-magical-index",
       "title": "A Certain Magical Index",
       "year": 2008,
       "tmdb_id": "30980",
       "tvmaze_id": 4944,
-      "aliases": ["To Aru Majutsu no Index", "とある魔術の禁書目録"],
-      "search_titles": ["A Certain Magical Index"],
+      "aliases": ["To Aru Majutsu no Index", "Toaru Majutsu no Index", "とある魔術の禁書目録"],
+      "search_titles": ["A Certain Magical Index", "Toaru Majutsu no Index"],
       "media_type": "anime",
       "notes": "Jellyfin no la tenía emparejada. TMDB 30980."
     },
@@ -369,8 +379,18 @@
       "year": 2009,
       "tmdb_id": "30977",
       "tvmaze_id": 4945,
-      "aliases": ["Toaru Kagaku no Railgun", "とある科学の超電磁砲"],
-      "search_titles": ["A Certain Scientific Railgun"],
+      "aliases": ["To Aru Kagaku no Railgun", "Toaru Kagaku no Railgun", "とある科学の超電磁砲"],
+      "search_titles": ["A Certain Scientific Railgun", "Toaru Kagaku no Railgun"],
+      "media_type": "anime"
+    },
+    {
+      "key": "toaru-kagaku-no-accelerator",
+      "title": "A Certain Scientific Accelerator",
+      "year": 2019,
+      "tvmaze_id": 42838,
+      "anilist_id": 104463,
+      "aliases": ["Toaru Kagaku no Accelerator"],
+      "search_titles": ["A Certain Scientific Accelerator", "Toaru Kagaku no Accelerator"],
       "media_type": "anime"
     },
     {
